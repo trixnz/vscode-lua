@@ -72,7 +72,7 @@ export class Analysis {
         return this.globalScope.nodes;
     }
 
-    public getScopedSuggestions(includeGlobals = false): ScopedNode[] {
+    public getScopedSuggestions(includeGlobals: boolean): ScopedNode[] {
         if (includeGlobals) {
             const nodes: ScopedNode[] = [];
             let scope = this.userScope;

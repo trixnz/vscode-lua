@@ -29,7 +29,7 @@ connection.onInitialize((params): InitializeResult => {
             // Use full sync mode for now.
             // TODO: Add support for Incremental changes. Full syncs will not scale very well.
             textDocumentSync: documents.syncKind,
-            documentSymbolProvider: true,
+            documentSymbolProvider: true
         }
     };
 });
@@ -149,7 +149,7 @@ connection.onCompletion(
 
         const getNodeScope = (node: luaparse.Node): Analysis.Scope => {
             return ((node as any).userdata as Analysis.ScopedNode).scope;
-        }
+        };
 
         const isParentOf = (l: Analysis.Scope, r: luaparse.Node) => {
             const nodeScope = getNodeScope(r);

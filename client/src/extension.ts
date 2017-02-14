@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
         // Register the server for plain text documents
         documentSelector: ['lua'],
         synchronize: {
-            configurationSection: 'languageServerExample',
+            configurationSection: 'languageServerExample'
         }
     };
 

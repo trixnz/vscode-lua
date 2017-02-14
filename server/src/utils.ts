@@ -8,17 +8,17 @@ export function getWordFromCursor(documentText: string, position: Position) {
 
     const leadingText = line.substring(0, position.character);
     const prefix = leadingText.match(endOfLineWordRegex);
-    let prefixString = prefix ? prefix[0] : '';
+    const prefixString = prefix ? prefix[0] : '';
     const prefixStartPosition = Position.create(position.line, position.character - prefixString.length);
 
     const trailingText = line.substring(position.character);
     const suffix = trailingText.match(beginningOfLineWordRegex);
-    let suffixString = suffix ? suffix[0] : '';
+    const suffixString = suffix ? suffix[0] : '';
     const suffixEndPosition = Position.create(position.line, position.character + suffixString.length);
 
     return {
         word: prefixString + suffixString,
-        prefixStartPosition: prefixStartPosition,
-        suffixEndPosition: suffixEndPosition
+        prefixStartPosition,
+        suffixEndPosition
     };
 }

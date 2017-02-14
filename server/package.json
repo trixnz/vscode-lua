@@ -11,8 +11,8 @@
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
-    "typescript": "^2.1.5",
-    "tslint": "^4.4.2"
+    "tslint": "^4.4.2",
+    "typescript": "^2.1.5"
   },
   "scripts": {
     "compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
