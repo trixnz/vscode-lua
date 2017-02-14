@@ -11,11 +11,11 @@ var clientFiles = {
 }
 
 gulp.task('compileClient', shell.task([
-    'cd client && tsc -p .'
+    'cd client && npm install && tsc -p .'
 ]));
 
 gulp.task('compileServer', shell.task([
-    'cd server && tsc -p .'
+    'cd server && npm install && tsc -p .'
 ]));
 
 gulp.task('tslint', function () {
