@@ -1,3 +1,3 @@
 export { Analysis } from './analysis';
-export { ScopedNode } from './Node';
+export { ScopedNode } from './node';
 export { Scope } from './scope';
