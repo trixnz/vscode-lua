@@ -1,0 +1,21 @@
+{
+  "name": "language-server-lua",
+  "version": "0.0.1",
+  "description": "Language server for Lua",
+  "main": "server.ts",
+  "author": "trixnz",
+  "license": "MIT",
+  "dependencies": {
+    "luaparse": "^0.2.1",
+    "vscode-languageserver": "^3.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^6.0.52",
+    "typescript": "^2.1.5",
+    "tslint": "^4.4.2"
+  },
+  "scripts": {
+    "compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
+    "watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
+  }
+}
