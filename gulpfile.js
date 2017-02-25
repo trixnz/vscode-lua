@@ -15,7 +15,7 @@ gulp.task('compileClient', shell.task([
 ]));
 
 gulp.task('compileServer', shell.task([
-    'cd server && npm install && tsc -p .'
+    'cd server && npm install && npm run compile'
 ]));
 
 gulp.task('tslint', function () {
