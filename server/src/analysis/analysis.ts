@@ -3,12 +3,10 @@ import * as luaparse from 'luaparse';
 import { Scope } from './scope';
 import { ScopedNode } from './node';
 
-import { connection } from '../server';
-
 export class Analysis {
-    public globalScope: Scope = null;
-    public currentScope: Scope = null;
-    public userScope: Scope = null;
+    public globalScope: Scope;
+    public currentScope: Scope;
+    public userScope: Scope;
 
     public nodes: luaparse.Node[] = [];
 
@@ -23,7 +21,8 @@ export class Analysis {
             onCreateNode: (node: luaparse.Node) => this.onCreateNode(node)
         });
 
-        this.currentScope = this.globalScope;
+        this.globalScope = new Scope();
+        this.globalScope.name = 'Global';
     }
 
     public write(text: string) {
@@ -35,18 +34,21 @@ export class Analysis {
     }
 
     private onCreateScope() {
-        const newScope = new Scope();
-        newScope.parentScope = this.currentScope;
-
-        if (this.globalScope === null) {
-            this.globalScope = newScope;
+        if (this.currentScope == null) {
+            this.currentScope = this.globalScope;
         }
+        else {
+            const newScope = new Scope();
 
-        this.currentScope = newScope;
+            newScope.parentScope = this.currentScope;
+            this.currentScope = newScope;
+        }
     }
 
     private onDestroyScope() {
-        if (this.currentScope.parentScope !== null) {
+        if (this.currentScope === null) { return; }
+
+        if (this.currentScope.parentScope != null) {
             this.currentScope = this.currentScope.parentScope;
         }
     }

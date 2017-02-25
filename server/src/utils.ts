@@ -1,6 +1,6 @@
 import { Position } from 'vscode-languageserver';
 
-export function getWordFromCursor(documentText: string, position: Position) {
+export function getCursorWordBoundry(documentText: string, position: Position) {
     const line = documentText.split(/\r?\n/g)[position.line];
 
     const beginningOfLineWordRegex = /^\w*[a-zA-Z_]+\w*\b/g;
@@ -17,7 +17,6 @@ export function getWordFromCursor(documentText: string, position: Position) {
     const suffixEndPosition = Position.create(position.line, position.character + suffixString.length);
 
     return {
-        word: prefixString + suffixString,
         prefixStartPosition,
         suffixEndPosition
     };

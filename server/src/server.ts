@@ -1,136 +1,82 @@
-'use strict';
-
 import {
     IPCMessageReader, IPCMessageWriter,
-    IConnection, createConnection,
+    createConnection,
     InitializeResult,
-    Diagnostic, Range, Location,
+    Diagnostic, Range,
     CompletionItem, CompletionItemKind,
-    TextDocuments, TextDocumentPositionParams, DocumentSymbolParams,
-    SymbolInformation, SymbolKind,
-    Position
+    TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
+    DocumentSymbolParams,
+    SymbolInformation
 } from 'vscode-languageserver';
 
 import * as luaparse from 'luaparse';
 
-import { LuaSymbol, LuaSymbolKind } from './lua_symbol';
-import { getWordFromCursor } from './utils';
+import { getCursorWordBoundry } from './utils';
 import * as Analysis from './analysis';
+import { buildCompletionList } from './services/completionProvider';
 
-export const connection: IConnection = createConnection(new IPCMessageReader(process),
-    new IPCMessageWriter(process));
+class ServiceDispatcher {
+    private connection = createConnection(
+        new IPCMessageReader(process),
+        new IPCMessageWriter(process)
+    );
 
-export const documents: TextDocuments = new TextDocuments();
-documents.listen(connection);
+    private documents: TextDocuments = new TextDocuments();
+    private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
 
-connection.onInitialize((params): InitializeResult => {
-    return {
-        capabilities: {
-            // Use full sync mode for now.
-            // TODO: Add support for Incremental changes. Full syncs will not scale very well.
-            textDocumentSync: documents.syncKind,
-            documentSymbolProvider: true
-        }
-    };
-});
-
-// Analysis of each document as they're saved
-// TODO: Make this better, because this sucks.
-const perDocumentAnalysis: { [uri: string]: Analysis.Analysis; } = {};
-
-documents.onDidChangeContent((change) => {
-    const documentUri = change.document.uri;
-
-    try {
-        perDocumentAnalysis[documentUri] = new Analysis.Analysis();
-        perDocumentAnalysis[documentUri].end(change.document.getText());
-
-        // Clear diagnostics for this document as nothing went wrong
-        connection.sendDiagnostics({
-            uri: documentUri,
-            diagnostics: []
-        });
-    } catch (e) {
-        const lines = change.document.getText().split(/\r?\n/g);
-        const line = lines[e.line - 1];
-
-        const range = Range.create(e.line - 1, e.column,
-            e.line - 1, line.length);
-
-        // Strip out the row and column from the message
-        const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
-
-        connection.sendDiagnostics({
-            uri: documentUri,
-            diagnostics: [
-                Diagnostic.create(range, message)
-            ]
-        });
-    }
-});
-
-function buildCompletionList(nodes: Analysis.ScopedNode[], uri: string, query?: string): LuaSymbol[] {
-    const satisfiesQuery = (name: string) => { return query == null || name.toLowerCase().indexOf(query) >= 0; };
-    const symbols: LuaSymbol[] = [];
-
-    for (const scopedNode of nodes) {
-        const node = scopedNode.node;
-
-        switch (node.type) {
-            case 'FunctionDeclaration':
-                if (node.identifier === null) { break; }
-
-                let name = '';
-                let container = null;
-                switch (node.identifier.type) {
-                    case 'Identifier':
-                        name = node.identifier.name;
-                        break;
-
-                    case 'MemberExpression':
-                        name = node.identifier.identifier.name;
-                        container = (node.identifier.base as luaparse.Identifier).name;
-                        break;
-                }
-
-                if (satisfiesQuery(name)) {
-                    const symbol = new LuaSymbol(name, LuaSymbolKind.Function, LuaSymbol.createLocation(uri, node));
-                    symbols.push(symbol);
-                }
-
-                break;
-
-            case 'LocalStatement':
-            case 'AssignmentStatement':
-                for (const variable of node.variables) {
-                    if (variable.type === 'Identifier' && satisfiesQuery(variable.name)) {
-                        const symbol = new LuaSymbol(variable.name, LuaSymbolKind.Variable,
-                            LuaSymbol.createLocation(uri, variable));
-
-                        // If the variable contains a function declaration, mark it as such
-                        if (node.init.length === 1 && node.init[0].type === 'FunctionDeclaration') {
-                            symbol.kind = LuaSymbolKind.Function;
-                        }
-
-                        symbols.push(symbol);
-                    }
-                }
-                break;
-        }
+    public log(...args: any[]) {
+        this.connection.console.log(args.toString());
     }
 
-    return symbols;
-}
+    public constructor() {
+        this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
 
-connection.onCompletion(
-    (textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+        this.connection.onInitialize(() => this.onInitialize());
+        this.connection.onCompletion(pos => this.onCompletion(pos));
+        this.connection.onDocumentSymbol(handler => this.onDocumentSymbol(handler));
+
+        this.documents.listen(this.connection);
+        this.connection.listen();
+    }
+
+    private onInitialize(): InitializeResult {
+        this.connection.console.info('Initializing state');
+
+        return {
+            capabilities: {
+                // Use full sync mode for now.
+                // TODO: Add support for Incremental changes. Full syncs will not scale very well.
+                textDocumentSync: this.documents.syncKind,
+                documentSymbolProvider: true,
+                completionProvider: {
+                    resolveProvider: false
+                }
+            }
+        };
+    }
+
+    private onDocumentSymbol(handler: DocumentSymbolParams): SymbolInformation[] {
+        const uri = handler.textDocument.uri;
+        const analysis = this.perDocumentAnalysis[uri];
+
+        return buildCompletionList(analysis.getGlobalSuggestions(), uri).map(symbol => {
+            return {
+                name: symbol.name,
+                kind: symbol.translateSymbolKind(),
+                location: symbol.location,
+                containerName: symbol.containerName
+            };
+        });
+    }
+
+    private onCompletion(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
         const uri = textDocumentPosition.textDocument.uri;
-        const document = documents.get(uri);
+        const document = this.documents.get(uri);
         const documentText = document.getText();
 
         const analysis = new Analysis.Analysis();
 
-        const { word, prefixStartPosition, suffixEndPosition } = getWordFromCursor(documentText,
+        const { prefixStartPosition, suffixEndPosition } = getCursorWordBoundry(documentText,
             textDocumentPosition.position);
 
         // Write everything up to the beginning of the potentially invalid text
@@ -154,7 +100,7 @@ connection.onCompletion(
         const isParentOf = (l: Analysis.Scope, r: luaparse.Node) => {
             const nodeScope = getNodeScope(r);
 
-            let curScope = l;
+            let curScope: Analysis.Scope | null = l;
             while (true) {
                 if (curScope === null) { break; }
                 if (curScope === nodeScope) { return true; }
@@ -207,20 +153,64 @@ connection.onCompletion(
         }
 
         return symbols;
+    }
+
+    private onDidChangeContent(change: TextDocumentChangeEvent) {
+        const documentUri = change.document.uri;
+
+        try {
+            this.perDocumentAnalysis[documentUri] = new Analysis.Analysis();
+            this.perDocumentAnalysis[documentUri].end(change.document.getText());
+
+            // Clear diagnostics for this document as nothing went wrong
+            this.connection.sendDiagnostics({
+                uri: documentUri,
+                diagnostics: []
+            });
+        } catch (err) {
+            if (!(err instanceof SyntaxError)) { throw err; }
+            const e = err as any;
+
+            const lines = change.document.getText().split(/\r?\n/g);
+            const line = lines[e.line - 1];
+
+            const range = Range.create(e.line - 1, e.column,
+                e.line - 1, line.length);
+
+            // Strip out the row and column from the message
+            const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
+
+            this.connection.sendDiagnostics({
+                uri: documentUri,
+                diagnostics: [
+                    Diagnostic.create(range, message)
+                ]
+            });
+        }
+    }
+};
+
+let serviceDispatcher: ServiceDispatcher | null = null;
+
+if (module.hot) {
+    module.hot.accept();
+
+    module.hot.store(stash => {
+        stash.serviceDispatcher = serviceDispatcher;
     });
 
-connection.onDocumentSymbol((handler: DocumentSymbolParams): SymbolInformation[] => {
-    const uri = handler.textDocument.uri;
-    const analysis = perDocumentAnalysis[uri];
-
-    return buildCompletionList(analysis.getGlobalSuggestions(), uri, null).map(symbol => {
-        return {
-            name: symbol.name,
-            kind: symbol.translateSymbolKind(),
-            location: symbol.location,
-            containerName: symbol.containerName
-        };
+    module.hot.restore(stash => {
+        if (stash.serviceDispatcher) {
+            serviceDispatcher = stash.serviceDispatcher;
+            const oldProto = Object.getPrototypeOf(serviceDispatcher);
+            const newProto = ServiceDispatcher.prototype;
+            for (const p of Object.getOwnPropertyNames(newProto)) {
+                oldProto[p] = newProto[p];
+            }
+        }
     });
-});
+}
 
-connection.listen();
+if (serviceDispatcher === null) {
+    serviceDispatcher = new ServiceDispatcher();
+}

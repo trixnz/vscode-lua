@@ -1,7 +1,7 @@
 import {
     Range, Location,
     CompletionItemKind,
-    SymbolInformation, SymbolKind
+    SymbolKind
 } from 'vscode-languageserver';
 
 import * as luaparse from 'luaparse';
@@ -47,6 +47,8 @@ class LuaSymbol {
             case LuaSymbolKind.Function:
                 return SymbolKind.Function;
         }
+
+        return SymbolKind.Variable;
     }
 
     public name: string;

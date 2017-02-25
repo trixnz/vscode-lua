@@ -14,7 +14,7 @@ import {
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     const serverModule = context.asAbsolutePath(
-        path.join('server', 'server.js'));
+        path.join('server', 'main.js'));
 
     // The debug options for the server
     const debugOptions = { execArgv: ['--nolazy', '--debug=6009'] };

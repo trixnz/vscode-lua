@@ -5,17 +5,24 @@
   "main": "server.ts",
   "author": "trixnz",
   "license": "MIT",
+  "bin": {
+    "installDevServerIntoExtension": "./bin/installDevServerIntoExtension"
+  },
   "dependencies": {
     "luaparse": "^0.2.1",
+    "source-map-support": "^0.4.11",
     "vscode-languageserver": "^3.0.4"
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
+    "node-hot": "^1.1.0",
     "tslint": "^4.4.2",
     "typescript": "^2.1.5"
   },
   "scripts": {
     "compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
-    "watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
+    "dev-compile": "installDevServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
+    "watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p .",
+    "dev-watch": "installDevServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
   }
 }
