@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 import {
-    LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions,
+    LanguageClient, LanguageClientOptions, ServerOptions,
     TransportKind
 } from 'vscode-languageclient';
 
