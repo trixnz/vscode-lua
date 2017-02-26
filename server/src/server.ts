@@ -70,8 +70,11 @@ class ServiceDispatcher {
         // And everything after
         try {
             analysis.end(documentText.substring(document.offsetAt(suffixEndPosition)));
-        } catch (e) {
-            throw e;
+        } catch (err) {
+            if (!(err instanceof SyntaxError)) { throw err; }
+
+            // Suppress the failure due to syntax errors
+            return [];
         }
 
         const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
