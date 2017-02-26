@@ -12,6 +12,11 @@
   "bugs": {
     "url": "https://github.com/trixnz/vscode-lua/issues"
   },
+  "icon": "images/icon.svg",
+  "galleryBanner": {
+    "color": "#313191",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.6.0"
   },
