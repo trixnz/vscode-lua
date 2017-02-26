@@ -1,12 +1,19 @@
 sudo: false
 os:
 - linux
-
 language: node_js
-
 node_js:
 - 6.3.1
-
 script:
 - npm install -g gulp
 - gulp
+deploy:
+  provider: releases
+  api_key:
+    secure: rgl8x1sjWLXO/hueU8pL0aBSg0PT+PJiNDRxn+EMuzSESEDgihMBCyz8CR+gjSqfYDXnnPLqUk/BZL+3H1cAWiRVPlh7A5icYd1x7g6xuswQxvVamdBQ8e3BSsdj3BFWu4YYKzSW3ZoCpg5ANL1e5EUysPkmorrsNma8jt3O0TLDU7eSkxtRm4/UOunWVytckH15nmOjo5AWeiuJ3qc+iuSFFjg4/Mm9OfRfHI47Fc9m7hx5g/9nGvV+o5vJNq1i+Gii3+0rd1ewGyD0kkVl7JetYOAiUN8Q6qA58TVXOlFZ45lxGAwzOSryDmpOw8tjn/aVGugibmqbd1yVKimQnXW8bAQrGcJ3obYsbImAPTrhJRLrn3LRQichj9sbvBhH4b4F9K40be+sTOh2oNUyqfgN+qoKWz9tDk2S3g5moEnCUp4jED61hEWEoUNX7mV+hPQpnJHvSkbXPlXrIfslEWYytNYQL1TBJXOg99fKLjIHqOYokt0nOw46uaGN2IxStFMDTpSCF3+h47uYRBItrk9tHxT/ZmfL1tUD2n4W5dLvqLkp7YLIbuSdhgFD9+GVaB8vrQnkxw5pbXzmP7FHs4INE6qvOlwrDh5WwZDSCB8zSRtuTfiKoJXBhAjIv0p8HbZKhOxgdbGoCj0IO1XgTJys0lcPhyf55mEEblb0N/I=
+  file_glob: true
+  file: "*.vsix"
+  skip_cleanup: true
+  on:
+    repo: trixnz/vscode-lua
+    tags: true
