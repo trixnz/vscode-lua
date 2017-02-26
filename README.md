@@ -22,3 +22,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 * [Oskar Schöldström](https://github.com/oxyc) - [luaparse](https://github.com/oxyc/luaparse): A Lua parser written in JavaScript
+* [Mikael Hermansson](https://github.com/mihe) - [node-hot](https://github.com/mihe/node-hot): Hot-reloading for Node.js
