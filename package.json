@@ -2,6 +2,16 @@
   "name": "vscode-lua-builder",
   "version": "1.0.0",
   "description": "Intellisense and Linting for Lua in VSCode",
+  "author": "trixnz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/trixnz/vscode-lua/issues"
+  },
+  "homepage": "https://github.com/trixnz/vscode-lua#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trixnz/vscode-lua.git"
+  },
   "main": "gulpfile.js",
   "devDependencies": {
     "gulp": "^3.9.1",
@@ -11,16 +21,11 @@
     "gulp-tag-version": "^1.3.0",
     "gulp-tslint": "^7.1.0",
     "tslint": "^4.4.2",
-    "typescript": "^2.1.6"
+    "typescript": "^2.1.6",
+    "vsce": "^1.18.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/trixnz/vscode-lua.git"
-  },
-  "author": "trixnz",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/trixnz/vscode-lua/issues"
-  },
-  "homepage": "https://github.com/trixnz/vscode-lua#readme"
+  "scripts": {
+    "package": "cd client && vsce package",
+    "travis-deploy": "cd client && vsce publish -p $VS_TOKEN"
+  }
 }

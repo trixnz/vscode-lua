@@ -11,12 +11,11 @@ script:
 - gulp
 
 after_success:
-- npm install -g vsce
-- cd client && vsce package
+- npm run package
 
 env:
   global:
-    secure: B82CI2PJWwHOr+vYzvaQY+lbhF2SEE6qHg/89D/kXA+8dhSuUKfWFLUyGjtNEW7PbLiNH0F3XVKHduLynRuhZYKnvOwPtnjtFBHo02CJuAYJ27xptP2qAG7QRXq1hLhfBCJYSBWnZcDP0qYUghupeVKxkOUiI08dhy9cVk/ybIeYFf8QhEE57Zb/ug7WOQfrLfZbL69KBmlf4VXnEOmf30cUXi3GZOe8q4Uid9+uezWnKp6+K/NNR5VfTvVJ3cZrxvSzyffzNihyvQZNxOHBzX+a1I4FHVyGDnrY7oiFJyS01rE/S12NrRHHaFURBkfTxlCGKJ7YnRQWGIr7fGo+DbPKPVteqTFmthiFu2Krc3z/01iH63S2+4mf3o5+jXWcUKLVlU8ASxaFH8WGtXMTRDU+/arhnZr4evJJ8FwHaLCCw83QLEXdHunDBzhIlmSDvoWS8Y2ABYdKnjIl4M1CeCzHuCa4F53j/E2MjNIDItb3IUzkLaCSbH1NVoQdg+cDkszHfR9NP/QcIFxkRkcCcPBSQR6HQ0UUSdqyBe4SdZAUJ9mvDYq5eRRqN/tEVhT7vJGngsE4cqbKCP5tmcAZCruWZ2SHzhUyqc5VFZYNxr2IcQ3nEwYo1CI/SHznT+agetPiqVkLT/F/NBAk7Phxhqf161RqYWhPEkLFwSrwExE=
+    secure: qCJJ6LFx7ZespK10R1FHIsgCdxRbEPjVNlpysTEy71adb6rJeYPHGuZ81IQN1zqN3vpRnwtamkGHbCV61pG881SVPqFY1jj2TGriUQctE9WsGnB3vyeeodlWLKJ0EplPwG9erX/sud1DDwJPg/x02/rI1NQDHRFBGOZvyKDiuRdDfNT5CmEu9KNkvrAeDWNt34dSITGnOGsFUYq0SZ1u4Uo34dVoV906jKNQYUoLzMiI5Pl6sg0a3X1JnbAGSSULlvWO+g5fqrUb4S3wCzEeqoJpflYZ9YITC5npZf40qhGjMwPxX983F9OjMNPd+rg/BDO45ziHPlpuJKGBmHrYuc2dgeJ/t9XZ7/SJBCEsHpOnCccxOIkC2kXcowyuWtXxvANNI4RMtardM1NUAQb9DJUSYGJQLe616yrT3/N/xxp01ZAijKOMFOHOiAr0ARwIgKW27ObUHGk5Fu8BUXr39/ossdORnfnlm7UITlH8L+SF/jQ0yudnSMABlFVOcR1quQsJW0Xj9NqGgGqfTy0y8jY3+C7gaQiI0J6Wh0JiFxfBZHHbcF6/tH74Jk/c2DHDsq+QfKN10uBOV3BavS6pGQFHduf5apg+gwcIDcTE6DN9ED+SR+NqhKtIs8GYEpDliU85kNYo7ik9gSFjlJaNW5NUBKN0p08ASMVE1NKP/Go=
 
 deploy:
 - provider: releases
@@ -29,7 +28,7 @@ deploy:
     repo: trixnz/vscode-lua
     tags: true
 - provider: script
-  script: cd client && vsce publish -p $VS_TOKEN
+  script: npm run travis-deploy
   skip_cleanup: true
   on:
     repo: trixnz/vscode-lua
