@@ -20,9 +20,9 @@
     "typescript": "^2.1.5"
   },
   "scripts": {
-    "compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
-    "dev-compile": "installDevServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
-    "watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p .",
-    "dev-watch": "installDevServerIntoExtension ../client ./package.json ./tsconfig.json && tsc --watch -p ."
+    "compile": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc -p .",
+    "dev-compile": "installDevServerIntoExtension ../out ./package.json ./tsconfig.json && tsc -p .",
+    "watch": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc --watch -p .",
+    "dev-watch": "installDevServerIntoExtension ../out ./package.json ./tsconfig.json && tsc --watch -p ."
   }
 }

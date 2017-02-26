@@ -54,4 +54,10 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
+# Compiled server
+server/out/
+
+# Build output
+out/
+
 test_data/

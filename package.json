@@ -1,31 +1,63 @@
 {
-  "name": "vscode-lua-builder",
-  "version": "1.0.0",
-  "description": "Intellisense and Linting for Lua in VSCode",
-  "author": "trixnz",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/trixnz/vscode-lua/issues"
-  },
+  "name": "vscode-lua",
+  "displayName": "vscode-lua",
+  "description": "Intellisense and Linting for Lua",
+  "version": "0.1.0",
+  "publisher": "trixnz",
   "homepage": "https://github.com/trixnz/vscode-lua#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trixnz/vscode-lua.git"
+    "url": "https://github.com/trixnz/vscode-lua"
   },
-  "main": "gulpfile.js",
+  "bugs": {
+    "url": "https://github.com/trixnz/vscode-lua/issues"
+  },
+  "engines": {
+    "vscode": "^1.6.0"
+  },
+  "categories": [
+    "Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:lua"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "languages": [
+      {
+        "id": "lua",
+        "aliases": [
+          "Lua"
+        ],
+        "extensions": [
+          ".lua"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "package": "vsce package",
+    "travis-deploy": "vsce publish -p $VS_TOKEN"
+  },
   "devDependencies": {
+    "@types/node": "^6.0.40",
+    "require-dir": "^0.3.1",
+    "tslint": "^4.4.2",
+    "typescript": "^2.0.3",
+    "vscode": "^1.0.0",
     "gulp": "^3.9.1",
     "gulp-bump": "^2.7.0",
     "gulp-git": "^2.0.0",
     "gulp-shell": "^0.5.2",
     "gulp-tag-version": "^1.3.0",
     "gulp-tslint": "^7.1.0",
-    "tslint": "^4.4.2",
-    "typescript": "^2.1.6",
     "vsce": "^1.18.0"
   },
-  "scripts": {
-    "package": "cd client && vsce package",
-    "travis-deploy": "cd client && vsce publish -p $VS_TOKEN"
+  "dependencies": {
+    "vscode-languageclient": "^3.0.3"
   }
 }

@@ -13,14 +13,22 @@ import {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    const serverModule = context.asAbsolutePath(
-        path.join('server', 'main.js'));
+    const serverModule = path.join(__dirname, '../server', 'main.js');
 
-    // The debug options for the server
-    const debugOptions = { execArgv: ['--nolazy', '--debug=6009'] };
+    const debugOptions = {
+        execArgv: ['--nolazy', '--debug=6009'], env: {
+            NODE_ENV: 'development'
+        }
+    };
+
+    const runOptions = {
+        env: {
+            NODE_ENV: 'production'
+        }
+    };
 
     const serverOptions: ServerOptions = {
-        run: { module: serverModule, transport: TransportKind.ipc },
+        run: { module: serverModule, transport: TransportKind.ipc, options: runOptions },
         debug: {
             module: serverModule, transport: TransportKind.ipc,
             options: debugOptions
@@ -32,13 +40,13 @@ export function activate(context: vscode.ExtensionContext) {
         // Register the server for plain text documents
         documentSelector: ['lua'],
         synchronize: {
-            configurationSection: 'languageServerExample'
+            configurationSection: 'luaLanguageServer'
         }
     };
 
     // Create the language client and start the client.
-    const disposable = new LanguageClient('languageServerExample',
-        'Language Server Example', serverOptions, clientOptions).start();
+    const disposable = new LanguageClient('luaLanguageServer',
+        'Lua Language Server', serverOptions, clientOptions).start();
 
     // Push the disposable to the context's subscriptions so that the
     // client can be deactivated on extension deactivation

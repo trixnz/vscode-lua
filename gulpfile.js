@@ -10,19 +10,19 @@ var serverFiles = {
 };
 
 var clientFiles = {
-    src: 'client/src/**/*.ts'
+    src: './src/**/*.ts'
 }
 
 function bumpVersion(ver) {
-    return gulp.src(['client/package.json'])
+    return gulp.src(['./package.json'])
         .pipe(bump({ type: ver }))
-        .pipe(gulp.dest('client/'))
+        .pipe(gulp.dest('./'))
         .pipe(git.commit('Bump package version'))
         .pipe(tag_version());
 }
 
 gulp.task('compileClient', shell.task([
-    'cd client && npm install && tsc -p .'
+    'npm run vscode:prepublish'
 ]));
 
 gulp.task('compileServer', shell.task([
