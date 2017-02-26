@@ -4,9 +4,15 @@ os:
 language: node_js
 node_js:
 - 6.3.1
+
 script:
 - npm install -g gulp
 - gulp
+
+after_success:
+- npm install -g vsce
+- vsce package
+
 deploy:
   provider: releases
   api_key:
