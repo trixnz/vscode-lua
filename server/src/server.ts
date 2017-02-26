@@ -3,17 +3,16 @@ import {
     createConnection,
     InitializeResult,
     Diagnostic, Range,
-    CompletionItem, CompletionItemKind,
+    CompletionItem,
     TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
     DocumentSymbolParams,
     SymbolInformation
 } from 'vscode-languageserver';
 
-import * as luaparse from 'luaparse';
-
 import { getCursorWordBoundry } from './utils';
 import * as Analysis from './analysis';
-import { buildCompletionList } from './services/completionProvider';
+import { CompletionService } from './services/completionService';
+import { buildDocumentSymbols } from './services/documentSymbolService';
 
 class ServiceDispatcher {
     private connection = createConnection(
@@ -23,10 +22,6 @@ class ServiceDispatcher {
 
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
-
-    public log(...args: any[]) {
-        this.connection.console.log(args.toString());
-    }
 
     public constructor() {
         this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
@@ -40,8 +35,6 @@ class ServiceDispatcher {
     }
 
     private onInitialize(): InitializeResult {
-        this.connection.console.info('Initializing state');
-
         return {
             capabilities: {
                 // Use full sync mode for now.
@@ -57,16 +50,9 @@ class ServiceDispatcher {
 
     private onDocumentSymbol(handler: DocumentSymbolParams): SymbolInformation[] {
         const uri = handler.textDocument.uri;
-        const analysis = this.perDocumentAnalysis[uri];
+        const analysis: Analysis.Analysis = this.perDocumentAnalysis[uri];
 
-        return buildCompletionList(analysis.getGlobalSuggestions(), uri).map(symbol => {
-            return {
-                name: symbol.name,
-                kind: symbol.translateSymbolKind(),
-                location: symbol.location,
-                containerName: symbol.containerName
-            };
-        });
+        return buildDocumentSymbols(uri, analysis);
     }
 
     private onCompletion(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
@@ -74,85 +60,25 @@ class ServiceDispatcher {
         const document = this.documents.get(uri);
         const documentText = document.getText();
 
-        const analysis = new Analysis.Analysis();
-
         const { prefixStartPosition, suffixEndPosition } = getCursorWordBoundry(documentText,
             textDocumentPosition.position);
 
+        const analysis = new Analysis.Analysis();
         // Write everything up to the beginning of the potentially invalid text
         analysis.write(documentText.substring(0, document.offsetAt(prefixStartPosition)));
-        // Inject a scope marker to (easily) determine which scope the suggestion is for.
-        // We could always parse the ranges, but this works for now.
-        analysis.write('__scope_marker__()');
 
         // And everything after
         try {
             analysis.end(documentText.substring(document.offsetAt(suffixEndPosition)));
         } catch (e) {
             throw e;
-            // return [];
         }
 
-        const getNodeScope = (node: luaparse.Node): Analysis.Scope => {
-            return ((node as any).userdata as Analysis.ScopedNode).scope;
-        };
+        const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
 
-        const isParentOf = (l: Analysis.Scope, r: luaparse.Node) => {
-            const nodeScope = getNodeScope(r);
-
-            let curScope: Analysis.Scope | null = l;
-            while (true) {
-                if (curScope === null) { break; }
-                if (curScope === nodeScope) { return true; }
-
-                curScope = curScope.parentScope;
-            }
-
-            return false;
-        };
-
-        const symbols = [];
-        const suggestions = analysis.getScopedSuggestions(true);
-        for (const scopedNode of suggestions) {
-            const node = scopedNode.node;
-
-            switch (node.type) {
-                case 'AssignmentStatement':
-                case 'LocalStatement':
-                    for (const variable of node.variables) {
-                        if (variable.type === 'Identifier') {
-                            symbols.push({
-                                label: variable.name,
-                                kind: CompletionItemKind.Variable
-                            });
-                        }
-                    }
-                    break;
-
-                case 'FunctionDeclaration':
-                    // Add the function name, if present.
-                    if (node.identifier !== null && node.identifier.type === 'Identifier') {
-                        symbols.push({
-                            label: node.identifier.name,
-                            kind: CompletionItemKind.Function
-                        });
-                    }
-
-                    // Add the function arguments only if it's scope is a parent of the completion scope
-                    for (const parameter of node.parameters.filter(n => isParentOf(analysis.userScope, n))) {
-                        if (parameter.type === 'Identifier') {
-                            symbols.push({
-                                label: parameter.name,
-                                kind: CompletionItemKind.Property
-                            });
-                        }
-                    }
-
-                    break;
-            }
-        }
-
-        return symbols;
+        const word = documentText.substring(document.offsetAt(prefixStartPosition),
+            document.offsetAt(suffixEndPosition));
+        return suggestionService.buildCompletions(word);
     }
 
     private onDidChangeContent(change: TextDocumentChangeEvent) {
@@ -162,7 +88,7 @@ class ServiceDispatcher {
             this.perDocumentAnalysis[documentUri] = new Analysis.Analysis();
             this.perDocumentAnalysis[documentUri].end(change.document.getText());
 
-            // Clear diagnostics for this document as nothing went wrong
+            // Clear diagnostics for this document, as nothing went wrong
             this.connection.sendDiagnostics({
                 uri: documentUri,
                 diagnostics: []

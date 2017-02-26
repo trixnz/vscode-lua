@@ -1,28 +1,25 @@
 import * as luaparse from 'luaparse';
 
-import { Scope } from './scope';
-import { ScopedNode } from './node';
+import { visitAST } from './astVisitor';
+import { Symbol, Function, Variable } from './types';
+
+import { Range } from 'vscode-languageserver';
 
 export class Analysis {
-    public globalScope: Scope;
-    public currentScope: Scope;
-    public userScope: Scope;
+    public symbols: Symbol[] = [];
 
-    public nodes: luaparse.Node[] = [];
+    private rootNode: luaparse.Node;
+
+    private enteredNodes: luaparse.Node[] = [];
+    private enteredFunctions: Function[] = [];
 
     public constructor() {
         luaparse.parse({
             locations: true,
             scope: true,
             wait: true,
-            comments: false,
-            onCreateScope: () => this.onCreateScope(),
-            onDestroyScope: () => this.onDestroyScope(),
-            onCreateNode: (node: luaparse.Node) => this.onCreateNode(node)
+            comments: false
         });
-
-        this.globalScope = new Scope();
-        this.globalScope.name = 'Global';
     }
 
     public write(text: string) {
@@ -30,68 +27,135 @@ export class Analysis {
     }
 
     public end(text: string) {
-        luaparse.end(text);
-    }
+        const ast = luaparse.end(text);
 
-    private onCreateScope() {
-        if (this.currentScope == null) {
-            this.currentScope = this.globalScope;
-        }
-        else {
-            const newScope = new Scope();
-
-            newScope.parentScope = this.currentScope;
-            this.currentScope = newScope;
-        }
-    }
-
-    private onDestroyScope() {
-        if (this.currentScope === null) { return; }
-
-        if (this.currentScope.parentScope != null) {
-            this.currentScope = this.currentScope.parentScope;
-        }
-    }
-
-    private onCreateNode(node: luaparse.Node) {
-        this.nodes.push(node);
-
-        const newNode = new ScopedNode(node);
-        newNode.scope = this.currentScope;
-
-        // Find the scope marker to figure out which scope the user is in
-        if (node.type === 'CallExpression' && node.base.type === 'Identifier' &&
-            node.base.name === '__scope_marker__') {
-            this.userScope = newNode.scope;
-        }
-
-        newNode.scope.nodes.push(newNode);
-
-        (node as any).userdata = newNode;
-    }
-
-    public getGlobalSuggestions(): ScopedNode[] {
-        return this.globalScope.nodes;
-    }
-
-    public getScopedSuggestions(includeGlobals: boolean): ScopedNode[] {
-        if (includeGlobals) {
-            const nodes: ScopedNode[] = [];
-            let scope = this.userScope;
-            // TODO: There has to be a better way of doing this..
-            while (true) {
-                nodes.push(...scope.nodes);
-
-                if (scope.parentScope === null) {
+        const visitNode = (node: luaparse.Node) => {
+            switch (node.type) {
+                case 'FunctionDeclaration':
+                    this.visitFunction(node);
                     break;
+
+                case 'LocalStatement':
+                case 'AssignmentStatement':
+                    this.visitLocalOrAssignment(node);
+                    break;
+            }
+        };
+
+        this.rootNode = ast;
+
+        visitAST(ast, {
+            onVisitNode: visitNode,
+            onEnterNode: (node) => {
+                // Inject a parent onto the luaparse nodes so we can deduce if a node is in the global scope
+                if (this.enteredNodes.length) {
+                    (node as any).parent = this.enteredNodes[this.enteredNodes.length - 1];
+                }
+                else {
+                    (node as any).parent = this.rootNode;
                 }
 
-                scope = scope.parentScope;
-            }
+                this.enteredNodes.push(node);
+            },
+            onExitNode: (node) => {
+                if (node.type === 'FunctionDeclaration') {
+                    this.enteredFunctions.pop();
+                }
 
-            return nodes;
+                this.enteredNodes.pop();
+            }
+        });
+    }
+
+    // Nodes don't necessarily need to have an identifier name, nor are their identifiers all of type 'Identifier'.
+    // Return an appropriate name, given the context of the node.
+    private getIdentifierName(identifier: luaparse.Identifier | luaparse.MemberExpression | null) {
+        if (identifier) {
+            switch (identifier.type) {
+                case 'Identifier':
+                    return { name: identifier.name, container: null };
+
+                case 'MemberExpression':
+                    switch (identifier.base.type) {
+                        case 'Identifier':
+                            return { name: identifier.identifier.name, container: identifier.base.name };
+                        default:
+                            return { name: identifier.identifier.name, container: null };
+                    }
+            }
         }
 
-        return this.userScope.nodes;
+        return { name: null, container: null };
+    }
+
+    // Convert the node's range into something the vscode language server can work with
+    private getRange(node: luaparse.NodeAdditional): Range {
+        return {
+            start: {
+                character: node.loc.start.column,
+                line: node.loc.start.line - 1
+            },
+            end: {
+                character: node.loc.end.column,
+                line: node.loc.end.line - 1
+            }
+        };
+    }
+
+    private isNodeGlobal(node: luaparse.Node) {
+        return (node as any).parent === this.rootNode;
+    }
+
+    private visitFunction(node: luaparse.FunctionDeclaration) {
+        const { name, container } = this.getIdentifierName(node.identifier);
+
+        const parameters = [];
+        for (const p of node.parameters) {
+            switch (p.type) {
+                case 'Identifier':
+                    parameters.push(p.name);
+                    break;
+
+                case 'VarargLiteral':
+                    break;
+            }
+        }
+
+        const func: Function = {
+            kind: 'Function',
+            name,
+            range: this.getRange(node),
+            isGlobalScope: this.isNodeGlobal(node),
+            container,
+            parameters,
+            localVariables: []
+        };
+
+        this.symbols.push(func);
+        this.enteredFunctions.push(func);
+    }
+
+    private visitLocalOrAssignment(node: luaparse.LocalStatement | luaparse.AssignmentStatement) {
+        for (const variable of node.variables) {
+            console.assert((variable as luaparse.NodeAdditional).type === 'Identifier',
+                'Unexpected variable type');
+
+            switch (variable.type) {
+                case 'Identifier':
+                    const newVariable: Variable = {
+                        kind: 'Variable',
+                        name: variable.name,
+                        range: this.getRange(variable),
+                        isGlobalScope: this.isNodeGlobal(node)
+                    };
+                    this.symbols.push(newVariable);
+
+                    if (this.enteredFunctions.length) {
+                        this.enteredFunctions[this.enteredFunctions.length - 1].localVariables.push(newVariable);
+                    }
+
+                    break;
+            }
+        }
     }
 }
