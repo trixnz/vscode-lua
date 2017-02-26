@@ -2,6 +2,7 @@ sudo: false
 os:
 - linux
 language: node_js
+
 node_js:
 - 6.3.1
 
@@ -11,14 +12,24 @@ script:
 
 after_success:
 - npm install -g vsce
-- vsce package
+- cd client && vsce package
+
+env:
+  global:
+    secure: B82CI2PJWwHOr+vYzvaQY+lbhF2SEE6qHg/89D/kXA+8dhSuUKfWFLUyGjtNEW7PbLiNH0F3XVKHduLynRuhZYKnvOwPtnjtFBHo02CJuAYJ27xptP2qAG7QRXq1hLhfBCJYSBWnZcDP0qYUghupeVKxkOUiI08dhy9cVk/ybIeYFf8QhEE57Zb/ug7WOQfrLfZbL69KBmlf4VXnEOmf30cUXi3GZOe8q4Uid9+uezWnKp6+K/NNR5VfTvVJ3cZrxvSzyffzNihyvQZNxOHBzX+a1I4FHVyGDnrY7oiFJyS01rE/S12NrRHHaFURBkfTxlCGKJ7YnRQWGIr7fGo+DbPKPVteqTFmthiFu2Krc3z/01iH63S2+4mf3o5+jXWcUKLVlU8ASxaFH8WGtXMTRDU+/arhnZr4evJJ8FwHaLCCw83QLEXdHunDBzhIlmSDvoWS8Y2ABYdKnjIl4M1CeCzHuCa4F53j/E2MjNIDItb3IUzkLaCSbH1NVoQdg+cDkszHfR9NP/QcIFxkRkcCcPBSQR6HQ0UUSdqyBe4SdZAUJ9mvDYq5eRRqN/tEVhT7vJGngsE4cqbKCP5tmcAZCruWZ2SHzhUyqc5VFZYNxr2IcQ3nEwYo1CI/SHznT+agetPiqVkLT/F/NBAk7Phxhqf161RqYWhPEkLFwSrwExE=
 
 deploy:
-  provider: releases
+- provider: releases
   api_key:
     secure: rgl8x1sjWLXO/hueU8pL0aBSg0PT+PJiNDRxn+EMuzSESEDgihMBCyz8CR+gjSqfYDXnnPLqUk/BZL+3H1cAWiRVPlh7A5icYd1x7g6xuswQxvVamdBQ8e3BSsdj3BFWu4YYKzSW3ZoCpg5ANL1e5EUysPkmorrsNma8jt3O0TLDU7eSkxtRm4/UOunWVytckH15nmOjo5AWeiuJ3qc+iuSFFjg4/Mm9OfRfHI47Fc9m7hx5g/9nGvV+o5vJNq1i+Gii3+0rd1ewGyD0kkVl7JetYOAiUN8Q6qA58TVXOlFZ45lxGAwzOSryDmpOw8tjn/aVGugibmqbd1yVKimQnXW8bAQrGcJ3obYsbImAPTrhJRLrn3LRQichj9sbvBhH4b4F9K40be+sTOh2oNUyqfgN+qoKWz9tDk2S3g5moEnCUp4jED61hEWEoUNX7mV+hPQpnJHvSkbXPlXrIfslEWYytNYQL1TBJXOg99fKLjIHqOYokt0nOw46uaGN2IxStFMDTpSCF3+h47uYRBItrk9tHxT/ZmfL1tUD2n4W5dLvqLkp7YLIbuSdhgFD9+GVaB8vrQnkxw5pbXzmP7FHs4INE6qvOlwrDh5WwZDSCB8zSRtuTfiKoJXBhAjIv0p8HbZKhOxgdbGoCj0IO1XgTJys0lcPhyf55mEEblb0N/I=
   file_glob: true
   file: "*.vsix"
+  skip_cleanup: true
+  on:
+    repo: trixnz/vscode-lua
+    tags: true
+- provider: script
+  script: cd client && vsce publish -p $VS_TOKEN
   skip_cleanup: true
   on:
     repo: trixnz/vscode-lua
