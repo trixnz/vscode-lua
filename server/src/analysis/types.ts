@@ -26,6 +26,8 @@ export interface Variable extends ISymbol {
     name: string | null;
     range: Range;
     isGlobalScope: boolean;
+
+    container?: string | null;
 }
 
 export type Symbol = Function | Variable;

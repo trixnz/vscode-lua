@@ -137,23 +137,39 @@ export class Analysis {
 
     private visitLocalOrAssignment(node: luaparse.LocalStatement | luaparse.AssignmentStatement) {
         for (const variable of node.variables) {
-            console.assert((variable as luaparse.NodeAdditional).type === 'Identifier',
-                'Unexpected variable type');
-
             switch (variable.type) {
                 case 'Identifier':
-                    const newVariable: Variable = {
-                        kind: 'Variable',
-                        name: variable.name,
-                        range: this.getRange(variable),
-                        isGlobalScope: this.isNodeGlobal(node)
-                    };
-                    this.symbols.push(newVariable);
+                    {
+                        const newVariable: Variable = {
+                            kind: 'Variable',
+                            name: variable.name,
+                            range: this.getRange(variable),
+                            isGlobalScope: this.isNodeGlobal(node)
+                        };
+                        this.symbols.push(newVariable);
 
-                    if (this.enteredFunctions.length) {
-                        this.enteredFunctions[this.enteredFunctions.length - 1].localVariables.push(newVariable);
+                        if (this.enteredFunctions.length) {
+                            this.enteredFunctions[this.enteredFunctions.length - 1].localVariables.push(newVariable);
+                        }
                     }
+                    break;
+                case 'MemberExpression':
+                    {
+                        const varName = this.getIdentifierName(variable);
 
+                        const newVariable: Variable = {
+                            kind: 'Variable',
+                            name: varName.name,
+                            range: this.getRange(variable),
+                            isGlobalScope: this.isNodeGlobal(node),
+                            container: varName.container
+                        };
+                        this.symbols.push(newVariable);
+
+                        if (this.enteredFunctions.length) {
+                            this.enteredFunctions[this.enteredFunctions.length - 1].localVariables.push(newVariable);
+                        }
+                    }
                     break;
             }
         }

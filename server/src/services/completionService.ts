@@ -28,7 +28,8 @@ export class CompletionService {
                     if (symbol.isGlobalScope && symbol.name && matchesQuery(symbol.name)) {
                         completions.push({
                             label: symbol.name,
-                            kind: CompletionItemKind.Function
+                            kind: CompletionItemKind.Function,
+                            detail: symbol.container || undefined
                         });
                     }
 
@@ -48,7 +49,8 @@ export class CompletionService {
 
                             completions.push({
                                 label: variable.name,
-                                kind: CompletionItemKind.Variable
+                                kind: CompletionItemKind.Variable,
+                                detail: variable.container || undefined
                             });
                         }
                     }
@@ -59,13 +61,13 @@ export class CompletionService {
                     if (symbol.isGlobalScope && symbol.name && matchesQuery(symbol.name)) {
                         completions.push({
                             label: symbol.name,
-                            kind: CompletionItemKind.Variable
+                            kind: CompletionItemKind.Variable,
+                            detail: symbol.container || undefined
                         });
                     }
                     break;
             }
         }
-
         return completions;
     }
 
