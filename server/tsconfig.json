@@ -19,7 +19,6 @@
         "alwaysStrict": true,
         "experimentalDecorators": true,
         "forceConsistentCasingInFileNames": true,
-        "noEmitHelpers": true,
         "noEmitOnError": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": true,

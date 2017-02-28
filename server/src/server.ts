@@ -2,9 +2,9 @@ import {
     IPCMessageReader, IPCMessageWriter,
     createConnection,
     InitializeResult,
-    Diagnostic, Range,
+    Diagnostic, DiagnosticSeverity, Range,
     CompletionItem,
-    TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
+    TextDocument, TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
     DocumentSymbolParams,
     SymbolInformation
 } from 'vscode-languageserver';
@@ -13,13 +13,21 @@ import { getCursorWordBoundry } from './utils';
 import * as Analysis from './analysis';
 import { CompletionService } from './services/completionService';
 import { buildDocumentSymbols } from './services/documentSymbolService';
+import { buildLintingErrors } from './services/lintingService';
+
+export interface Settings {
+    luacheckPath: string;
+    preferLuaCheckErrors: boolean;
+}
 
 class ServiceDispatcher {
+
     private connection = createConnection(
         new IPCMessageReader(process),
         new IPCMessageWriter(process)
     );
 
+    private settings: Settings;
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
 
@@ -29,6 +37,7 @@ class ServiceDispatcher {
         this.connection.onInitialize(() => this.onInitialize());
         this.connection.onCompletion(pos => this.onCompletion(pos));
         this.connection.onDocumentSymbol(handler => this.onDocumentSymbol(handler));
+        this.connection.onDidChangeConfiguration(change => this.onDidChangeConfiguration(change));
 
         this.documents.listen(this.connection);
         this.connection.listen();
@@ -85,37 +94,71 @@ class ServiceDispatcher {
     }
 
     private onDidChangeContent(change: TextDocumentChangeEvent) {
-        const documentUri = change.document.uri;
+        this.parseAndLintDocument(change.document).then(diagnostics => {
+            this.connection.sendDiagnostics({
+                uri: change.document.uri,
+                diagnostics
+            });
+        });
+    }
+
+    private onDidChangeConfiguration(change: any) {
+        this.settings = change.settings.lua as Settings;
+    }
+
+    private async parseAndLintDocument(document: TextDocument) {
+        const documentUri = document.uri;
+        const documentText = document.getText();
+
+        // Run the docment through luaparse and output any errors it finds
+        const parseDocument = (): Promise<Diagnostic[]> => {
+            return new Promise((resolve) => {
+                try {
+                    this.perDocumentAnalysis[documentUri] = new Analysis.Analysis();
+                    this.perDocumentAnalysis[documentUri].end(documentText);
+
+                    return resolve([]);
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) { throw err; }
+                    const e = err as any;
+
+                    const lines = documentText.split(/\r?\n/g);
+                    const line = lines[e.line - 1];
+
+                    const range = Range.create(e.line - 1, e.column,
+                        e.line - 1, line.length);
+
+                    // Strip out the row and column from the message
+                    const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
+
+                    const diagnostic: Diagnostic = {
+                        range,
+                        message,
+                        severity: DiagnosticSeverity.Error,
+                        source: 'luaparse'
+                    };
+
+                    return resolve([diagnostic]);
+                }
+            });
+        };
+
+        let errors = await parseDocument();
 
         try {
-            this.perDocumentAnalysis[documentUri] = new Analysis.Analysis();
-            this.perDocumentAnalysis[documentUri].end(change.document.getText());
+            // TODO: Clean up the dependency on this.settings.. should probably have a SettingsManager type class.
+            const lintingErrors = await buildLintingErrors(this.settings, documentUri, documentText);
 
-            // Clear diagnostics for this document, as nothing went wrong
-            this.connection.sendDiagnostics({
-                uri: documentUri,
-                diagnostics: []
-            });
-        } catch (err) {
-            if (!(err instanceof SyntaxError)) { throw err; }
-            const e = err as any;
+            // If luacheck errors are preferred and luacheck has provided us with some, usurp any luaparse errors.
+            if (this.settings.preferLuaCheckErrors && lintingErrors.length > 0) {
+                errors = lintingErrors;
+            } else {
+                // Otherwise, join the two lists together.
+                errors = errors.concat(lintingErrors);
+            }
+        } catch (e) { }
 
-            const lines = change.document.getText().split(/\r?\n/g);
-            const line = lines[e.line - 1];
-
-            const range = Range.create(e.line - 1, e.column,
-                e.line - 1, line.length);
-
-            // Strip out the row and column from the message
-            const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
-
-            this.connection.sendDiagnostics({
-                uri: documentUri,
-                diagnostics: [
-                    Diagnostic.create(range, message)
-                ]
-            });
-        }
+        return errors;
     }
 };
 

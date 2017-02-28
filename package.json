@@ -43,13 +43,18 @@
     "configuration": {
       "title": "vscode-lua configuration",
       "properties": {
-        "luacheck.path": {
+        "lua.luacheckPath": {
           "type": [
             "string",
             "null"
           ],
           "default": null,
           "description": "Specifies the path to luacheck binary (if not found on PATH)"
+        },
+        "lua.preferLuaCheckErrors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Specifies whether to prefer luacheck errors over the standard luaparse errors if luacheck is available"
         }
       }
     }

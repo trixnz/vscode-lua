@@ -11,7 +11,8 @@
   "dependencies": {
     "luaparse": "^0.2.1",
     "source-map-support": "^0.4.11",
-    "vscode-languageserver": "^3.0.4"
+    "vscode-languageserver": "^3.0.4",
+    "vscode-uri": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
