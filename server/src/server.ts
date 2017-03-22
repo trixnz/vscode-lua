@@ -2,10 +2,11 @@ import {
     IPCMessageReader, IPCMessageWriter,
     createConnection,
     InitializeResult,
-    Diagnostic, DiagnosticSeverity, Range,
+    Diagnostic, DiagnosticSeverity, Range, Position,
     CompletionItem,
     TextDocument, TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
-    DocumentSymbolParams,
+    DocumentSymbolParams, DocumentFormattingParams, DocumentRangeFormattingParams,
+    TextEdit,
     SymbolInformation
 } from 'vscode-languageserver';
 
@@ -14,6 +15,7 @@ import * as Analysis from './analysis';
 import { CompletionService } from './services/completionService';
 import { buildDocumentSymbols } from './services/documentSymbolService';
 import { buildLintingErrors } from './services/lintingService';
+import { formatText } from 'lua-fmt';
 
 export interface Settings {
     luacheckPath: string;
@@ -38,6 +40,8 @@ class ServiceDispatcher {
         this.connection.onCompletion(pos => this.onCompletion(pos));
         this.connection.onDocumentSymbol(handler => this.onDocumentSymbol(handler));
         this.connection.onDidChangeConfiguration(change => this.onDidChangeConfiguration(change));
+        this.connection.onDocumentFormatting((params) => this.onDocumentFormatting(params));
+        this.connection.onDocumentRangeFormatting((params) => this.onDocumentRangeFormatting(params));
 
         this.documents.listen(this.connection);
         this.connection.listen();
@@ -52,7 +56,9 @@ class ServiceDispatcher {
                 documentSymbolProvider: true,
                 completionProvider: {
                     resolveProvider: false
-                }
+                },
+                documentFormattingProvider: true,
+                documentRangeFormattingProvider: true
             }
         };
     }
@@ -104,6 +110,38 @@ class ServiceDispatcher {
 
     private onDidChangeConfiguration(change: any) {
         this.settings = change.settings.lua as Settings;
+    }
+
+    private onDocumentFormatting(params: DocumentFormattingParams): TextEdit[] {
+        const uri = params.textDocument.uri;
+        const document = this.documents.get(uri);
+        const documentText = document.getText();
+        const lines = documentText.split(/\r?\n/g);
+
+        const formattedText = formatText(documentText);
+
+        const range = Range.create(
+            Position.create(0, 0),
+            Position.create(document.lineCount - 1, lines[document.lineCount - 1].length)
+        );
+        return [
+            TextEdit.replace(range, formattedText)
+        ];
+    }
+
+    private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
+        const uri = params.textDocument.uri;
+        const document = this.documents.get(uri);
+        const documentText = document.getText();
+
+        const startOffset = document.offsetAt(params.range.start);
+        const endOffset = document.offsetAt(params.range.end);
+        const text = documentText.substring(startOffset, endOffset);
+        const formattedText = formatText(text);
+
+        return [
+            TextEdit.replace(params.range, formattedText)
+        ];
     }
 
     private async parseAndLintDocument(document: TextDocument) {

@@ -12,6 +12,7 @@
   "bugs": {
     "url": "https://github.com/trixnz/vscode-lua/issues"
   },
+  "license": "MIT",
   "icon": "images/icon.svg",
   "galleryBanner": {
     "color": "#313191",
