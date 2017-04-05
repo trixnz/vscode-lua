@@ -11,7 +11,7 @@
             "port": 6009,
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/../out/server/**/*.js"
+                "../out/server/**/*.js"
             ]
         }
     ]

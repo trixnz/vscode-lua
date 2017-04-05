@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
     const serverModule = path.join(__dirname, '../server', 'main.js');
 
     const debugOptions = {
-        execArgv: ['--nolazy', '--debug=6009'], env: {
+        execArgv: ['--nolazy', '--inspect=6009'], env: {
             NODE_ENV: 'development'
         }
     };
@@ -30,7 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
     const serverOptions: ServerOptions = {
         run: { module: serverModule, transport: TransportKind.ipc, options: runOptions },
         debug: {
-            module: serverModule, transport: TransportKind.ipc,
+            module: serverModule,
+            transport: TransportKind.ipc,
+            // The current version of node shipped with VSCode Insiders (as of April 3 2017) seems to have an issue with
+            // --inspect debugging, so we'll assume that someone debugging the extension has a recent version of node on
+            // on their PATH.
+            // If you do not, comment this line out and replace the --inspect above with --debug.
+            runtime: 'node',
             options: debugOptions
         }
     };
