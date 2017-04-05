@@ -32,6 +32,7 @@ class ServiceDispatcher {
     private settings: Settings;
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
+    private readonly triggerCharacters = ['.', ':'];
 
     public constructor() {
         this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
@@ -55,7 +56,8 @@ class ServiceDispatcher {
                 textDocumentSync: this.documents.syncKind,
                 documentSymbolProvider: true,
                 completionProvider: {
-                    resolveProvider: false
+                    resolveProvider: false,
+                    triggerCharacters: this.triggerCharacters
                 },
                 documentFormattingProvider: true,
                 documentRangeFormattingProvider: true
@@ -78,13 +80,31 @@ class ServiceDispatcher {
         const { prefixStartPosition, suffixEndPosition } = getCursorWordBoundry(documentText,
             textDocumentPosition.position);
 
+        const startOffset = document.offsetAt(prefixStartPosition);
+        const endOffset = document.offsetAt(suffixEndPosition);
+
         const analysis = new Analysis.Analysis();
         // Write everything up to the beginning of the potentially invalid text
-        analysis.write(documentText.substring(0, document.offsetAt(prefixStartPosition)));
+        analysis.write(documentText.substring(0, startOffset));
+
+        // Is the completion for an object scope?
+        let isObjectScoped = false;
+
+        const charAt = documentText.charAt(startOffset - 1);
+        // If the completion is prefixed by a trigger character, insert a dummy function call to keep the Lua
+        // syntactically valid and parsable.
+        if (this.triggerCharacters.indexOf(charAt) >= 0) {
+            analysis.write('__completion_helper__()');
+            isObjectScoped = true;
+        }
+
+        // Insert a scope marker to help us find which scope we're in
+        analysis.write('__scope_marker__()');
 
         // And everything after
         try {
-            analysis.end(documentText.substring(document.offsetAt(suffixEndPosition)));
+            analysis.end(documentText.substring(endOffset));
+            analysis.buildScopedSymbols(isObjectScoped);
         } catch (err) {
             if (!(err instanceof SyntaxError)) { throw err; }
 
@@ -94,8 +114,7 @@ class ServiceDispatcher {
 
         const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
 
-        const word = documentText.substring(document.offsetAt(prefixStartPosition),
-            document.offsetAt(suffixEndPosition));
+        const word = documentText.substring(startOffset, endOffset);
         return suggestionService.buildCompletions(word);
     }
 
@@ -154,6 +173,7 @@ class ServiceDispatcher {
                 try {
                     this.perDocumentAnalysis[documentUri] = new Analysis.Analysis();
                     this.perDocumentAnalysis[documentUri].end(documentText);
+                    this.perDocumentAnalysis[documentUri].buildGlobalSymbols();
 
                     return resolve([]);
                 } catch (err) {

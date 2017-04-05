@@ -1,4 +1,5 @@
-import { Position } from 'vscode-languageserver';
+import { Position, Range } from 'vscode-languageserver';
+import { NodeAdditional } from 'luaparse';
 
 export function getCursorWordBoundry(documentText: string, position: Position) {
     const line = documentText.split(/\r?\n/g)[position.line];
@@ -19,5 +20,19 @@ export function getCursorWordBoundry(documentText: string, position: Position) {
     return {
         prefixStartPosition,
         suffixEndPosition
+    };
+}
+
+// Convert the node's range into something the vscode language server can work with
+export function getNodeRange(node: NodeAdditional): Range {
+    return {
+        start: {
+            character: node.loc.start.column,
+            line: node.loc.start.line - 1
+        },
+        end: {
+            character: node.loc.end.column,
+            line: node.loc.end.line - 1
+        }
     };
 }

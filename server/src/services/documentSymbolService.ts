@@ -5,7 +5,6 @@ export function buildDocumentSymbols(uri: string, analysis: Analysis): SymbolInf
     const symbols: SymbolInformation[] = [];
 
     for (const symbol of analysis.symbols.filter(f => f.isGlobalScope)) {
-
         // Populate the document's functions:
         if (symbol.kind === 'Function') {
             if (symbol.name === null) { continue; }

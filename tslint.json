@@ -42,9 +42,6 @@
         "no-default-export": true,
         "no-duplicate-variable": true,
         "no-eval": true,
-        "no-inferrable-types": [
-            true
-        ],
         "no-internal-module": true,
         "no-invalid-this": true,
         "no-mergeable-namespace": true,

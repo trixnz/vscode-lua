@@ -12,7 +12,7 @@ declare module 'luaparse' {
 
 	export type Expression = CallExpression | StringCallExpression | TableCallExpression |
 		FunctionDeclaration | Identifier | IndexExpression | MemberExpression |
-		TableConstructorExpression | BooleanLiteral | NumericLiteral | StringLiteral |
+		TableConstructorExpression | BooleanLiteral | NilLiteral | NumericLiteral | StringLiteral |
 		VarargLiteral | BinaryExpression | LogicalExpression | UnaryExpression;
 
 	export type Statement = LabelStatement | BreakStatement | GotoStatement |
@@ -37,7 +37,7 @@ declare module 'luaparse' {
 	}
 	export interface ReturnStatement extends NodeAdditional {
 		readonly type: "ReturnStatement";
-		readonly arguments: Expression;
+		readonly arguments: Expression[];
 	}
 	export interface IfStatement extends NodeAdditional {
 		readonly type: "IfStatement";
@@ -106,7 +106,7 @@ declare module 'luaparse' {
 		readonly iterators: Expression[];
 		readonly body: Statement[];
 	}
-	export interface Chunk {
+	export interface Chunk extends NodeAdditional {
 		readonly type: "Chunk";
 		readonly body: Statement[];
 		readonly comments: Comment[];
