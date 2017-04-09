@@ -10,4 +10,5 @@ export interface Symbol {
     container?: string | null;
     range: Range;
     isGlobalScope: boolean;
+    isOuterScope: boolean;
 }

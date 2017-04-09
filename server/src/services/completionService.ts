@@ -33,6 +33,9 @@ export class CompletionService {
                     else if (symbol.kind === 'FunctionParameter') {
                         detail = '(parameter)';
                     }
+                    else if (symbol.isOuterScope) {
+                        detail = '(outer)';
+                    }
                     else {
                         detail = '(local)';
                     }

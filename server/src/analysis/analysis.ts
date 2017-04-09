@@ -219,7 +219,8 @@ export class Analysis {
             container,
             display,
             range: getNodeRange(node),
-            isGlobalScope: node.scope === this.globalScope
+            isGlobalScope: node.scope === this.globalScope,
+            isOuterScope: node.scope !== this.cursorScope
         });
     }
 
