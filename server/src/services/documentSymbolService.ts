@@ -1,10 +1,10 @@
 import { Analysis } from '../analysis';
-import { SymbolInformation, CompletionItemKind, Location } from 'vscode-languageserver';
+import { SymbolInformation, Location, SymbolKind } from 'vscode-languageserver';
 
 export function buildDocumentSymbols(uri: string, analysis: Analysis): SymbolInformation[] {
     const symbols: SymbolInformation[] = [];
 
-    for (const symbol of analysis.symbols.filter(f => f.isGlobalScope)) {
+    for (const symbol of analysis.symbols.filter(sym => sym.isGlobalScope)) {
         // Populate the document's functions:
         if (symbol.kind === 'Function') {
             if (symbol.name === null) { continue; }
@@ -12,7 +12,7 @@ export function buildDocumentSymbols(uri: string, analysis: Analysis): SymbolInf
             symbols.push({
                 name: symbol.name,
                 containerName: symbol.container || undefined,
-                kind: CompletionItemKind.Function,
+                kind: SymbolKind.Function,
                 location: Location.create(uri, symbol.range)
             });
         }
@@ -22,7 +22,7 @@ export function buildDocumentSymbols(uri: string, analysis: Analysis): SymbolInf
 
             symbols.push({
                 name: symbol.name,
-                kind: CompletionItemKind.Variable,
+                kind: SymbolKind.Variable,
                 location: Location.create(uri, symbol.range)
             });
         }
