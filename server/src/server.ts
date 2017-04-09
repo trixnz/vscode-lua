@@ -87,15 +87,15 @@ class ServiceDispatcher {
         // Write everything up to the beginning of the potentially invalid text
         analysis.write(documentText.substring(0, startOffset));
 
-        // Is the completion for an object scope?
-        let isObjectScoped = false;
+        // Is the completion for a table?
+        let isTableScoped = false;
 
         const charAt = documentText.charAt(startOffset - 1);
         // If the completion is prefixed by a trigger character, insert a dummy function call to keep the Lua
         // syntactically valid and parsable.
         if (this.triggerCharacters.indexOf(charAt) >= 0) {
             analysis.write('__completion_helper__()');
-            isObjectScoped = true;
+            isTableScoped = true;
         }
 
         // Insert a scope marker to help us find which scope we're in
@@ -104,7 +104,7 @@ class ServiceDispatcher {
         // And everything after
         try {
             analysis.end(documentText.substring(endOffset));
-            analysis.buildScopedSymbols(isObjectScoped);
+            analysis.buildScopedSymbols(isTableScoped);
         } catch (err) {
             if (!(err instanceof SyntaxError)) { throw err; }
 

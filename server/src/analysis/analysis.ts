@@ -1,6 +1,6 @@
 import * as luaparse from 'luaparse';
 
-import { Symbol } from './symbol';
+import { Symbol, SymbolKind } from './symbol';
 import { Scope } from './scope';
 import { getNodeRange } from '../utils';
 
@@ -12,6 +12,7 @@ export class Analysis {
     private scopeStack: Scope[] = [];
     private globalScope: Scope;
     private cursorScope: Scope | null = null;
+    private completionTableName: string | null = null;
 
     public constructor() {
         luaparse.parse({
@@ -54,6 +55,12 @@ export class Analysis {
                 if (node.type === 'Identifier' && node.name === '__scope_marker__') {
                     this.cursorScope = scope;
                 }
+                else if (node.type === 'CallExpression' && node.base.type === 'MemberExpression') {
+                    const { name, container } = this.getIdentifierName(node.base);
+                    if (name === '__completion_helper__') {
+                        this.completionTableName = container;
+                    }
+                }
             },
             onDestroyScope: () => {
                 this.scopeStack.pop();
@@ -69,27 +76,105 @@ export class Analysis {
         this.rootNode = luaparse.end(text);
     }
 
-    public buildScopedSymbols(isObjectScope: boolean = false) {
-        // TODO: Support object scoped queries. For now, carry on as usual.
-        // i.e: someObject.<Completion>
-        if (isObjectScope) { }
-
+    public buildScopedSymbols(isTableScope: boolean = false) {
         // If we didn't find the scope containing the cursor, we can't provide scope-aware suggestions.
         // TODO: Fall back to just providing global symbols?
         if (this.cursorScope === null) {
             return;
         }
 
+        if (isTableScope) {
+            this.addTableScopeSymbols();
+            return;
+        }
+
+        this.addScopedSymbols();
+    }
+
+    public buildGlobalSymbols() {
+        this.globalScope.nodes.forEach((n) => this.addSymbolsForNode(n, false));
+    }
+
+    private addTableScopeSymbols() {
+        if (!this.completionTableName) {
+            return;
+        }
+
+        let currentScope = this.cursorScope;
+        let abortScopeTraversal = false;
+        while (currentScope !== null) {
+            for (const n of currentScope.nodes) {
+                if (n.type === 'LocalStatement') {
+                    // If the cursor scope has introduced a shadowing variable, don't continue traversing the scope
+                    // parent tree.
+                    if (currentScope === this.cursorScope &&
+                        n.variables.some(ident => ident.name === this.completionTableName)) {
+                        abortScopeTraversal = true;
+                    }
+                }
+                else if (n.type === 'AssignmentStatement') {
+                    // Add any member fields being assigned to the symbol
+                    n.variables
+                        .filter(variable => variable.type === 'MemberExpression')
+                        .forEach((v: luaparse.MemberExpression) => {
+                            if (v.base.type === 'Identifier' && v.base.name === this.completionTableName) {
+                                this.addSymbolHelper(v.identifier, v.identifier.name, 'Variable',
+                                    undefined, this.completionTableName);
+                            }
+                        });
+                }
+
+                if (n.type === 'LocalStatement' || n.type === 'AssignmentStatement') {
+                    // Find the variable that matches the current symbol to provide completions for, if any.
+                    let variableIndex = -1;
+                    for (const [i, variable] of n.variables.entries()) {
+                        if (variable.type === 'Identifier' && variable.name === this.completionTableName) {
+                            variableIndex = i;
+                        }
+                    }
+
+                    if (variableIndex >= 0) {
+                        const variableInit = n.init[variableIndex];
+
+                        // If the field was initialised with a table, add the fields from it.
+                        if (variableInit && variableInit.type === 'TableConstructorExpression') {
+                            for (const field of variableInit.fields) {
+                                switch (field.type) {
+                                    case 'TableKey':
+                                        if (field.key.type === 'StringLiteral') {
+                                            this.addSymbolHelper(field, field.key.value, 'Variable', undefined,
+                                                this.completionTableName);
+                                        }
+                                        break;
+
+                                    case 'TableKeyString':
+                                        if (field.key.type === 'Identifier') {
+                                            this.addSymbolHelper(field, field.key.name, 'Variable', undefined,
+                                                this.completionTableName);
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (abortScopeTraversal) {
+                break;
+            }
+
+            currentScope = currentScope.parentScope;
+        }
+    }
+
+    private addScopedSymbols() {
         // Add all of the symbols for the current cursor scope
         let currentScope: Scope | null = this.cursorScope;
         while (currentScope !== null) {
             currentScope.nodes.forEach((n) => this.addSymbolsForNode(n, true));
             currentScope = currentScope.parentScope;
         }
-    }
-
-    public buildGlobalSymbols() {
-        this.globalScope.nodes.forEach((n) => this.addSymbolsForNode(n, false));
     }
 
     // Nodes don't necessarily need to have an identifier name, nor are their identifiers all of type 'Identifier'.
@@ -126,29 +211,24 @@ export class Analysis {
         }
     }
 
+    private addSymbolHelper(node: luaparse.Node, name: string | null, kind: SymbolKind,
+        container?: string, display?: string) {
+        this.symbols.push({
+            kind,
+            name,
+            container,
+            display,
+            range: getNodeRange(node),
+            isGlobalScope: node.scope === this.globalScope
+        });
+    }
+
     private addLocalAndAssignmentSymbols(node: luaparse.LocalStatement | luaparse.AssignmentStatement) {
         for (const variable of node.variables) {
             switch (variable.type) {
                 case 'Identifier':
-                    this.symbols.push({
-                        kind: 'Variable',
-                        name: variable.name,
-                        range: getNodeRange(variable),
-                        isGlobalScope: variable.scope === this.globalScope
-                    });
+                    this.addSymbolHelper(variable, variable.name, 'Variable');
                     break;
-
-                // case 'MemberExpression':
-                //     const varName = this.getIdentifierName(variable);
-
-                //     this.symbols.push({
-                //         kind: 'Variable',
-                //         name: varName.name,
-                //         display: varName.container,
-                //         range: getNodeRange(variable),
-                //         isGlobalScope: variable.scope === this.globalScope
-                //     });
-                //     break;
             }
         }
     }
@@ -168,25 +248,13 @@ export class Analysis {
 
         display += ')';
 
-        this.symbols.push({
-            kind: 'Function',
-            name,
-            display,
-            container,
-            range: getNodeRange(node),
-            isGlobalScope: node.scope === this.globalScope
-        });
+        this.addSymbolHelper(node, name, 'Function', container || undefined, display);
 
         if (scopedQuery) {
             node.parameters
                 .filter(param => param.type === 'Identifier' && param.scope.containsScope(this.cursorScope))
                 .forEach((param: luaparse.Identifier) => {
-                    this.symbols.push({
-                        kind: 'FunctionParameter',
-                        name: param.name,
-                        range: getNodeRange(param),
-                        isGlobalScope: false
-                    });
+                    this.addSymbolHelper(param, param.name, 'FunctionParameter');
                 });
         }
     }
