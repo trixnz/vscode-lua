@@ -115,7 +115,7 @@ class ServiceDispatcher {
         const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
 
         const word = documentText.substring(startOffset, endOffset);
-        return suggestionService.buildCompletions(word);
+        return suggestionService.buildCompletions(word.toLowerCase());
     }
 
     private onDidChangeContent(change: TextDocumentChangeEvent) {
