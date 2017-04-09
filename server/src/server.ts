@@ -7,15 +7,19 @@ import {
     TextDocument, TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
     DocumentSymbolParams, DocumentFormattingParams, DocumentRangeFormattingParams,
     TextEdit,
-    SymbolInformation
+    SymbolInformation, WorkspaceSymbolParams, InitializeParams
 } from 'vscode-languageserver';
 
 import { getCursorWordBoundry } from './utils';
 import * as Analysis from './analysis';
 import { CompletionService } from './services/completionService';
 import { buildDocumentSymbols } from './services/documentSymbolService';
+import { buildWorkspaceSymbols } from './services/workspaceSymbolService';
 import { buildLintingErrors } from './services/lintingService';
 import { formatText } from 'lua-fmt';
+
+import { readFiles, FileNamedCallback } from 'node-dir';
+import Uri from 'vscode-uri/lib';
 
 export interface Settings {
     luacheckPath: string;
@@ -29,6 +33,7 @@ class ServiceDispatcher {
         new IPCMessageWriter(process)
     );
 
+    private rootUri: string | null;
     private settings: Settings;
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
@@ -37,9 +42,10 @@ class ServiceDispatcher {
     public constructor() {
         this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
 
-        this.connection.onInitialize(() => this.onInitialize());
+        this.connection.onInitialize(handler => this.onInitialize(handler));
         this.connection.onCompletion(pos => this.onCompletion(pos));
         this.connection.onDocumentSymbol(handler => this.onDocumentSymbol(handler));
+        this.connection.onWorkspaceSymbol(handler => this.onWorkspaceSymbol(handler));
         this.connection.onDidChangeConfiguration(change => this.onDidChangeConfiguration(change));
         this.connection.onDocumentFormatting((params) => this.onDocumentFormatting(params));
         this.connection.onDocumentRangeFormatting((params) => this.onDocumentRangeFormatting(params));
@@ -48,13 +54,16 @@ class ServiceDispatcher {
         this.connection.listen();
     }
 
-    private onInitialize(): InitializeResult {
+    private onInitialize(initializeParams: InitializeParams): InitializeResult {
+        this.rootUri = initializeParams.rootUri;
+
         return {
             capabilities: {
                 // Use full sync mode for now.
                 // TODO: Add support for Incremental changes. Full syncs will not scale very well.
                 textDocumentSync: this.documents.syncKind,
                 documentSymbolProvider: true,
+                workspaceSymbolProvider: true,
                 completionProvider: {
                     resolveProvider: false,
                     triggerCharacters: this.triggerCharacters
@@ -70,6 +79,44 @@ class ServiceDispatcher {
         const analysis: Analysis.Analysis = this.perDocumentAnalysis[uri];
 
         return buildDocumentSymbols(uri, analysis);
+    }
+
+    private onWorkspaceSymbol(handler: WorkspaceSymbolParams) {
+        if (!this.rootUri) {
+            return [];
+        }
+
+        const query = handler.query.toLowerCase();
+
+        return new Promise<SymbolInformation[]>((resolve, reject) => {
+            const symbols: SymbolInformation[] = [];
+            const callback: FileNamedCallback = (err, content, filename, next) => {
+                if (err) {
+                    return;
+                }
+
+                try {
+                    const analysis = new Analysis.Analysis();
+                    analysis.end(content.toString());
+                    analysis.buildGlobalSymbols();
+
+                    symbols.push(...buildWorkspaceSymbols(filename, query, analysis));
+                } catch (e) {
+                }
+
+                next();
+            };
+
+            const uri = Uri.parse(this.rootUri!);
+            readFiles(uri.fsPath, { match: /.lua$/ }, callback, (err) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+
+                resolve(symbols);
+            });
+        });
     }
 
     private onCompletion(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {

@@ -9,8 +9,10 @@
     "installDevServerIntoExtension": "./bin/installDevServerIntoExtension"
   },
   "dependencies": {
+    "@types/node-dir": "0.0.30",
     "lua-fmt": "^2.0.0",
     "luaparse": "^0.2.1",
+    "node-dir": "^0.1.16",
     "source-map-support": "^0.4.11",
     "vscode-languageserver": "^3.0.4",
     "vscode-uri": "^1.0.0"

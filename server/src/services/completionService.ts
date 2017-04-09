@@ -4,6 +4,7 @@ import {
 } from 'vscode-languageserver';
 
 import { Analysis, Symbol } from '../analysis';
+import { matchesQuery } from '../utils';
 
 export class CompletionService {
     private analysis: Analysis;
@@ -15,14 +16,8 @@ export class CompletionService {
     }
 
     public buildCompletions(query: string): CompletionItem[] {
-        const matchesQuery = (name: string | null) => {
-            if (query.length === 0) { return true; }
-            if (name === null) { return false; }
-            return name.toLowerCase().indexOf(query) !== -1;
-        };
-
         return this.analysis.symbols
-            .filter(symbol => matchesQuery(symbol.name))
+            .filter(symbol => matchesQuery(query, symbol.name))
             .map(symbol => {
                 let detail = symbol.display;
 
