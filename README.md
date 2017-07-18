@@ -8,6 +8,7 @@ Provides Intellisense and Linting for Lua in VSCode
 - [x] Go to Symbol
 - [x] Error checking
 - [x] Linting
+- [x] Formatting
 - [ ] Code Snippets
 
 ## Installing
