@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/trixnz/vscode-lua.svg?branch=master)](https://travis-ci.org/trixnz/vscode-lua) [![Visual Studio Marketplace](http://vsmarketplacebadge.apphb.com/version/trixnz.vscode-lua.svg)](https://marketplace.visualstudio.com/items?itemName=trixnz.vscode-lua)
+[![Build Status](https://travis-ci.org/trixnz/vscode-lua.svg?branch=master)](https://travis-ci.org/trixnz/vscode-lua) [![Visual Studio Marketplace](https://vsmarketplacebadge.apphb.com/version/trixnz.vscode-lua.svg)](https://marketplace.visualstudio.com/items?itemName=trixnz.vscode-lua)
 
 # Lua for Visual Studio Code
 Provides Intellisense and Linting for Lua in VSCode
