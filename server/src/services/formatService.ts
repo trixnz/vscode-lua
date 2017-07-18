@@ -82,12 +82,19 @@ function getEditsFromFormattedText(documentUri: string, originalText: string, fo
 }
 
 export function buildDocumentFormatEdits(documentUri: string, document: TextDocument): TextEdit[] {
-    const documentText = document.getText();
+    let documentText = document.getText();
 
     const formatOptions: UserOptions = {
         writeMode: WriteMode.Diff
     };
-    const formattedText = formatText(documentText, formatOptions);
+    let formattedText = formatText(documentText, formatOptions);
+
+    // Normalize the line endings so jsdiff has a chance at providing minimal edits, otherwise the diffing result will
+    // be one giant edit, which isn't very friendly.
+    if (process.platform === 'win32') {
+        documentText = documentText.split('\r\n').join('\n');
+        formattedText = formattedText.split('\r\n').join('\n');
+    }
 
     return getEditsFromFormattedText(documentUri, documentText, formattedText);
 }
