@@ -2,7 +2,7 @@ import {
     IPCMessageReader, IPCMessageWriter,
     createConnection,
     InitializeResult,
-    Diagnostic, DiagnosticSeverity, Range, Position,
+    Diagnostic, DiagnosticSeverity, Range,
     CompletionItem,
     TextDocument, TextDocuments, TextDocumentChangeEvent, TextDocumentPositionParams,
     DocumentSymbolParams, DocumentFormattingParams, DocumentRangeFormattingParams,
@@ -16,7 +16,7 @@ import { CompletionService } from './services/completionService';
 import { buildDocumentSymbols } from './services/documentSymbolService';
 import { buildWorkspaceSymbols } from './services/workspaceSymbolService';
 import { buildLintingErrors } from './services/lintingService';
-import { formatText } from 'lua-fmt';
+import { buildDocumentFormatEdits, buildDocumentRangeFormatEdits } from './services/formatService';
 
 import { readFiles, FileNamedCallback } from 'node-dir';
 import Uri from 'vscode-uri/lib';
@@ -181,33 +181,15 @@ class ServiceDispatcher {
     private onDocumentFormatting(params: DocumentFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
-        const documentText = document.getText();
-        const lines = documentText.split(/\r?\n/g);
 
-        const formattedText = formatText(documentText);
-
-        const range = Range.create(
-            Position.create(0, 0),
-            Position.create(document.lineCount - 1, lines[document.lineCount - 1].length)
-        );
-        return [
-            TextEdit.replace(range, formattedText)
-        ];
+        return buildDocumentFormatEdits(uri, document);
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
-        const documentText = document.getText();
 
-        const startOffset = document.offsetAt(params.range.start);
-        const endOffset = document.offsetAt(params.range.end);
-        const text = documentText.substring(startOffset, endOffset);
-        const formattedText = formatText(text);
-
-        return [
-            TextEdit.replace(params.range, formattedText)
-        ];
+        return buildDocumentRangeFormatEdits(uri, document, params.range);
     }
 
     private async parseAndLintDocument(document: TextDocument) {
