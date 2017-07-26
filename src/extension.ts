@@ -1,18 +1,22 @@
-'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-
 import * as path from 'path';
+import { VersionSelector } from './versionSelector';
 
 import {
     LanguageClient, LanguageClientOptions, ServerOptions,
     TransportKind
 } from 'vscode-languageclient';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    startLanguageServer(context);
+
+    context.subscriptions.push(new VersionSelector());
+}
+
+export function deactivate() {
+}
+
+function startLanguageServer(context: vscode.ExtensionContext) {
     const serverModule = path.join(__dirname, '../server', 'main.js');
 
     const debugOptions = {
@@ -59,8 +63,4 @@ export function activate(context: vscode.ExtensionContext) {
     // Push the disposable to the context's subscriptions so that the
     // client can be deactivated on extension deactivation
     context.subscriptions.push(disposable);
-}
-
-// this method is called when your extension is deactivated
-export function deactivate() {
 }

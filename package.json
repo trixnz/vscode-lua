@@ -56,6 +56,16 @@
           "type": "boolean",
           "default": false,
           "description": "Specifies whether to prefer luacheck errors over the standard luaparse errors if luacheck is available"
+        },
+        "lua.targetVersion": {
+          "type": "string",
+          "default": "5.1",
+          "description": "Specifies the target version of Lua",
+          "enum": [
+            "5.1",
+            "5.2",
+            "5.3"
+          ]
         }
       }
     }

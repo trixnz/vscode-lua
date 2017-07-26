@@ -21,9 +21,12 @@ import { buildDocumentFormatEdits, buildDocumentRangeFormatEdits } from './servi
 import { readFiles, FileNamedCallback } from 'node-dir';
 import Uri from 'vscode-uri/lib';
 
+import * as luaparse from 'luaparse';
+
 export interface Settings {
     luacheckPath: string;
     preferLuaCheckErrors: boolean;
+    targetVersion: string;
 }
 
 class ServiceDispatcher {
@@ -175,7 +178,32 @@ class ServiceDispatcher {
     }
 
     private onDidChangeConfiguration(change: any) {
+        const oldVersion = this.settings ? this.settings.targetVersion : null;
         this.settings = change.settings.lua as Settings;
+
+        // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
+        // so its possible that the version string will be malformed.
+        if (!['5.1', '5.2', '5.3'].includes(this.settings.targetVersion)) {
+            this.settings.targetVersion = '5.1';
+        }
+
+        // Update luaparse to reflect the user's choice in Lua version. This is much easier than
+        // remembering to pass it in every time we may use it.
+        luaparse.defaultOptions.luaVersion = this.settings.targetVersion;
+
+        // If the version has changed, we best act on it.
+        if (oldVersion && oldVersion !== this.settings.targetVersion) {
+            // Re-lint all of the open documents, as the previous diagnostics may no longer be valid for the new
+            // version.
+            this.documents.all().forEach((doc) => {
+                this.parseAndLintDocument(doc).then(diagnostics => {
+                    this.connection.sendDiagnostics({
+                        uri: doc.uri,
+                        diagnostics
+                    });
+                });
+            });
+        }
     }
 
     private onDocumentFormatting(params: DocumentFormattingParams): TextEdit[] {
