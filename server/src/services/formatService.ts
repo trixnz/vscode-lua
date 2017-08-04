@@ -1,6 +1,7 @@
 import { TextEdit, Range, Position, TextDocument } from 'vscode-languageserver';
 import { formatText, producePatch, UserOptions, WriteMode } from 'lua-fmt';
 import { parsePatch } from 'diff';
+import { FormatOptions } from '../server';
 
 enum EditAction {
     Replace,
@@ -81,11 +82,14 @@ function getEditsFromFormattedText(documentUri: string, originalText: string, fo
     });
 }
 
-export function buildDocumentFormatEdits(documentUri: string, document: TextDocument): TextEdit[] {
+export function buildDocumentFormatEdits(documentUri: string, document: TextDocument, extFormatOptions: FormatOptions): TextEdit[] {
     let documentText = document.getText();
 
     const formatOptions: UserOptions = {
-        writeMode: WriteMode.Diff
+        writeMode: WriteMode.Diff,
+        indentCount: extFormatOptions.indentCount,
+        lineWidth: extFormatOptions.lineWidth,
+        quotemark: extFormatOptions.singleQuote ? 'single' : 'double',
     };
     let formattedText = formatText(documentText, formatOptions);
 
@@ -100,7 +104,7 @@ export function buildDocumentFormatEdits(documentUri: string, document: TextDocu
 }
 
 export function buildDocumentRangeFormatEdits(_documentUri: string, _document: TextDocument,
-    _range: Range): TextEdit[] {
+    _range: Range, _extFormatOptions: FormatOptions): TextEdit[] {
     return [];
 
     // TODO: This feature is dependent on https://github.com/trixnz/lua-fmt/issues/14 to provide a reasonable

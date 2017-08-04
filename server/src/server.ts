@@ -23,10 +23,17 @@ import Uri from 'vscode-uri/lib';
 
 import * as luaparse from 'luaparse';
 
+export interface FormatOptions {
+    indentCount: number;
+    lineWidth: number;
+    singleQuote: boolean
+}
+
 export interface Settings {
     luacheckPath: string;
     preferLuaCheckErrors: boolean;
     targetVersion: string;
+    format: FormatOptions;
 }
 
 class ServiceDispatcher {
@@ -181,6 +188,18 @@ class ServiceDispatcher {
         const oldVersion = this.settings ? this.settings.targetVersion : null;
         this.settings = change.settings.lua as Settings;
 
+        // Because the JSON we get in `change` can be anything, we need to make sure that we've actually been passed
+        // a valid type, and not something else, like a string.
+        const validateSetting = <T>(v: any, defaultVal: T) => {
+            if (typeof (v) === typeof (defaultVal)) { return v; }
+            return defaultVal;
+        }
+
+        this.settings.preferLuaCheckErrors = validateSetting<boolean>(this.settings.preferLuaCheckErrors, false);
+        this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);
+        this.settings.format.lineWidth = validateSetting<number>(this.settings.format.lineWidth, 120);
+        this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
+
         // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
         // so its possible that the version string will be malformed.
         if (!['5.1', '5.2', '5.3'].includes(this.settings.targetVersion)) {
@@ -210,14 +229,14 @@ class ServiceDispatcher {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentFormatEdits(uri, document);
+        return buildDocumentFormatEdits(uri, document, this.settings.format);
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentRangeFormatEdits(uri, document, params.range);
+        return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format);
     }
 
     private async parseAndLintDocument(document: TextDocument) {

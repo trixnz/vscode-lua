@@ -66,6 +66,21 @@
             "5.2",
             "5.3"
           ]
+        },
+        "lua.format.lineWidth": {
+          "type": "integer",
+          "default": 120,
+          "description": "Maximum length of a line before it will be wrapped"
+        },
+        "lua.format.indentCount": {
+          "type": "integer",
+          "default": 4,
+          "description": "Number of characters to indent"
+        },
+        "lua.format.singleQuote": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to use single or double quotes on strings. Defaults to double quotes"
         }
       }
     }
