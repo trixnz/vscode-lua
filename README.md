@@ -17,6 +17,25 @@ Provides Intellisense and Linting for Lua in VSCode
 
 Alternatively, you can download the extension from the [marketplace](https://marketplace.visualstudio.com/items?itemName=trixnz.vscode-lua).
 
+## Settings
+#### lua.luacheckPath (Default: `null`)
+Specifies the path to luacheck binary (if not found on `PATH`).
+#### lua.preferLuaCheckErrors (Default: `false`)
+Specifies whether to prefer luacheck errors over the standard luaparse errors if luacheck is available.
+#### lua.targetVersion (Default: `5.1`)
+Specifies the target version of Lua. Valid options:
+* 5.1
+* 5.2
+* 5.3
+
+Can also be changed using the version selector in the bottom right of the IDE.
+#### lua.format.lineWidth (Default: `120`)
+Maximum length of a line before it will be wrapped.
+#### lua.format.indentCount (Default: `4`)
+Number of characters to indent.
+#### lua.format.singleQuote (Default: `false`)
+Whether to use single or double quotes on strings. Defaults to double quotes.
+
 ## Luacheck
 Support for linting is provided via [luacheck](https://github.com/mpeterv/luacheck). Installation instructions can be found on the `luacheck` [repository](https://github.com/mpeterv/luacheck#installation).
 
