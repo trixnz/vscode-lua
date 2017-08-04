@@ -26,7 +26,7 @@ import * as luaparse from 'luaparse';
 export interface FormatOptions {
     indentCount: number;
     lineWidth: number;
-    singleQuote: boolean
+    singleQuote: boolean;
 }
 
 export interface Settings {
@@ -193,7 +193,7 @@ class ServiceDispatcher {
         const validateSetting = <T>(v: any, defaultVal: T) => {
             if (typeof (v) === typeof (defaultVal)) { return v; }
             return defaultVal;
-        }
+        };
 
         this.settings.preferLuaCheckErrors = validateSetting<boolean>(this.settings.preferLuaCheckErrors, false);
         this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);

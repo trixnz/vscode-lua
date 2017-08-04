@@ -82,14 +82,15 @@ function getEditsFromFormattedText(documentUri: string, originalText: string, fo
     });
 }
 
-export function buildDocumentFormatEdits(documentUri: string, document: TextDocument, extFormatOptions: FormatOptions): TextEdit[] {
+export function buildDocumentFormatEdits(documentUri: string, document: TextDocument, extFormatOptions: FormatOptions):
+    TextEdit[] {
     let documentText = document.getText();
 
     const formatOptions: UserOptions = {
         writeMode: WriteMode.Diff,
         indentCount: extFormatOptions.indentCount,
         lineWidth: extFormatOptions.lineWidth,
-        quotemark: extFormatOptions.singleQuote ? 'single' : 'double',
+        quotemark: extFormatOptions.singleQuote ? 'single' : 'double'
     };
     let formattedText = formatText(documentText, formatOptions);
 
