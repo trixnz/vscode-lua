@@ -58,9 +58,9 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
         const uri = Uri.parse(documentUri);
         const dir = dirname(uri.fsPath);
 
-        const process = spawn(settings.luacheckPath, ['-', '--no-color', '--ranges', '--codes'], {
-            cwd: dir
-        });
+        const process = spawn(settings.luacheckPath, [
+            '-', '--no-color', '--ranges', '--codes', '--filename=' + uri.fsPath
+        ], { cwd: dir });
 
         try {
             process.stdin.write(documentText);
