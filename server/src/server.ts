@@ -243,6 +243,12 @@ class ServiceDispatcher {
         const documentUri = document.uri;
         const documentText = document.getText();
 
+        const parsedUri = Uri.parse(documentUri);
+        // Don't lint the diff view. Fixes #22.
+        if (parsedUri.scheme === 'showModifications') {
+            return [];
+        }
+
         // Run the docment through luaparse and output any errors it finds
         const parseDocument = (): Promise<Diagnostic[]> => {
             return new Promise((resolve) => {
