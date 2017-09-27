@@ -37,7 +37,8 @@
           "Lua"
         ],
         "extensions": [
-          ".lua"
+          ".lua",
+          ".luacheckrc"
         ]
       }
     ],
