@@ -82,6 +82,23 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to use single or double quotes on strings. Defaults to double quotes"
+        },
+        "lua.server.command": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "When defined, uses an external language server using the given shell command."
+        },
+        "lua.server.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "arguments"
+          },
+          "default": [],
+          "description": "When lua.server.command is defined, pass as command line arguments."
         }
       }
     }
