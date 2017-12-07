@@ -47,10 +47,9 @@
       "properties": {
         "lua.luacheckPath": {
           "type": [
-            "string",
-            "null"
+            "string"
           ],
-          "default": null,
+          "default": "luacheck",
           "description": "Specifies the path to luacheck binary (if not found on PATH)"
         },
         "lua.preferLuaCheckErrors": {

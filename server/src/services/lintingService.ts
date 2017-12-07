@@ -2,7 +2,7 @@ import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { spawn } from 'child_process';
 // Arrrgh. This is awful!
 import { Settings } from '../server';
-import { dirname } from 'path';
+import { dirname, extname } from 'path';
 import Uri from 'vscode-uri';
 
 function parseDiagnostics(data: string): Diagnostic[] {
@@ -54,26 +54,33 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
     // If a path to luacheck hasn't been provided, don't bother trying.
     if (!settings.luacheckPath) { return Promise.resolve([]); }
 
+    let luacheckPath = settings.luacheckPath;
+
+    // On Windows, luacheck is invoked via a .bat file
+    if (process.platform === 'win32' && extname(luacheckPath) !== '.bat') {
+        luacheckPath += '.bat';
+    }
+
     return new Promise<Diagnostic[]>((resolve, reject) => {
         const uri = Uri.parse(documentUri);
         const dir = dirname(uri.fsPath);
 
-        const process = spawn(settings.luacheckPath, [
+        const cp = spawn(luacheckPath, [
             '-', '--no-color', '--ranges', '--codes', '--filename=' + uri.fsPath
         ], { cwd: dir });
 
         try {
-            process.stdin.write(documentText);
-            process.stdin.end();
+            cp.stdin.write(documentText);
+            cp.stdin.end();
         } catch (err) { }
 
-        process.stdout.on('data', (data: Buffer) => {
+        cp.stdout.on('data', (data: Buffer) => {
             return resolve(parseDiagnostics(data.toString()));
         });
-        process.stderr.on('data', (data: Buffer) => {
+        cp.stderr.on('data', (data: Buffer) => {
             return reject(data.toString());
         });
-        process.on('error', (err: NodeJS.ErrnoException) => {
+        cp.on('error', (err: NodeJS.ErrnoException) => {
             if (err.code === 'ENOENT') {
                 return reject('Path to luacheck is invalid.');
             }
