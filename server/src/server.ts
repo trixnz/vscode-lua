@@ -169,7 +169,7 @@ class ServiceDispatcher {
             return [];
         }
 
-        const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
+        const suggestionService = new CompletionService(analysis);
 
         const word = documentText.substring(startOffset, endOffset);
         return suggestionService.buildCompletions(word.toLowerCase());

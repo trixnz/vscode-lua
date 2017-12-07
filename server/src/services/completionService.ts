@@ -1,18 +1,13 @@
-import {
-    CompletionItem, CompletionItemKind,
-    Position
-} from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 
 import { Analysis, Symbol } from '../analysis';
 import { matchesQuery } from '../utils';
 
 export class CompletionService {
     private analysis: Analysis;
-    private position: Position;
 
-    public constructor(analysis: Analysis, position: Position) {
+    public constructor(analysis: Analysis) {
         this.analysis = analysis;
-        this.position = position;
     }
 
     public buildCompletions(query: string): CompletionItem[] {

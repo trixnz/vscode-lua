@@ -7,8 +7,6 @@ import { getNodeRange } from '../utils';
 export class Analysis {
     public symbols: Symbol[] = [];
 
-    private rootNode: luaparse.Chunk;
-
     private scopeStack: Scope[] = [];
     private globalScope: Scope;
     private cursorScope: Scope | null = null;
@@ -73,7 +71,7 @@ export class Analysis {
     }
 
     public end(text: string) {
-        this.rootNode = luaparse.end(text);
+        luaparse.end(text);
     }
 
     public buildScopedSymbols(isTableScope: boolean = false) {
@@ -114,9 +112,13 @@ export class Analysis {
                 }
                 else if (n.type === 'AssignmentStatement') {
                     // Add any member fields being assigned to the symbol
+
+                    // filter<> specialization due to a bug in the current Typescript.
+                    // Should be fixed in 2.7 by https://github.com/Microsoft/TypeScript/pull/17600
                     n.variables
-                        .filter(variable => variable.type === 'MemberExpression')
-                        .forEach((v: luaparse.MemberExpression) => {
+                        .filter<luaparse.MemberExpression>((v): v is luaparse.MemberExpression =>
+                            v.type === 'MemberExpression')
+                        .forEach(v => {
                             if (v.base.type === 'Identifier' && v.base.name === this.completionTableName) {
                                 this.addSymbolHelper(v.identifier, v.identifier.name, 'Variable',
                                     undefined, this.completionTableName);
@@ -236,14 +238,17 @@ export class Analysis {
 
     private addFunctionSymbols(node: luaparse.FunctionDeclaration, scopedQuery: boolean) {
         const { name, container } = this.getIdentifierName(node.identifier);
+        // filter<> specialization due to a bug in the current Typescript.
+        // Should be fixed in 2.7 by https://github.com/Microsoft/TypeScript/pull/17600
+        const parameters = node.parameters
+            .filter<luaparse.Identifier>((v): v is luaparse.Identifier => v.type === 'Identifier');
 
         // Build a represesntation of the function declaration
         let display = 'function ';
         if (container) { display += container + ':'; }
         if (name) { display += name; }
         display += '(';
-        display += node.parameters
-            .filter(param => param.type === 'Identifier')
+        display += parameters
             .map((param: luaparse.Identifier) => param.name)
             .join(', ');
 
@@ -252,8 +257,8 @@ export class Analysis {
         this.addSymbolHelper(node, name, 'Function', container || undefined, display);
 
         if (scopedQuery) {
-            node.parameters
-                .filter(param => param.type === 'Identifier' && param.scope.containsScope(this.cursorScope))
+            parameters
+                .filter(param => param.scope.containsScope(this.cursorScope))
                 .forEach((param: luaparse.Identifier) => {
                     this.addSymbolHelper(param, param.name, 'FunctionParameter');
                 });
