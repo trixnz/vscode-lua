@@ -52,6 +52,7 @@ class ServiceDispatcher {
 
     public constructor() {
         this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
+        this.documents.onDidClose(change => this.onDidClose(change));
 
         this.connection.onInitialize(handler => this.onInitialize(handler));
         this.connection.onCompletion(pos => this.onCompletion(pos));
@@ -182,6 +183,13 @@ class ServiceDispatcher {
                 uri: change.document.uri,
                 diagnostics
             });
+        });
+    }
+
+    private onDidClose(change: TextDocumentChangeEvent) {
+        this.connection.sendDiagnostics({
+            uri: change.document.uri,
+            diagnostics: []
         });
     }
 
