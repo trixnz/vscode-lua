@@ -25,6 +25,7 @@ import * as luaparse from 'luaparse';
 
 export interface FormatOptions {
     indentCount: number;
+    useTabs: boolean;
     lineWidth: number;
     singleQuote: boolean;
 }
@@ -196,7 +197,11 @@ class ServiceDispatcher {
         };
 
         this.settings.preferLuaCheckErrors = validateSetting<boolean>(this.settings.preferLuaCheckErrors, false);
-        this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);
+        // indentCount defaults to `null`, which means we should use the editor settings. Anything else shall override
+        // what the editor tells us.
+        if (this.settings.format.indentCount !== null) {
+            this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);
+        }
         this.settings.format.lineWidth = validateSetting<number>(this.settings.format.lineWidth, 120);
         this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
 
@@ -229,14 +234,14 @@ class ServiceDispatcher {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentFormatEdits(uri, document, this.settings.format);
+        return buildDocumentFormatEdits(uri, document, this.settings.format, params.options);
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format);
+        return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format, params.options);
     }
 
     private async parseAndLintDocument(document: TextDocument) {

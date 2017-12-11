@@ -72,10 +72,21 @@
           "default": 120,
           "description": "Maximum length of a line before it will be wrapped"
         },
+        "lua.format.useTabs": {
+          "type": [
+            "null",
+            "boolean"
+          ],
+          "default": null,
+          "description": "Force the formatter to use tabs over spaces. A value of null (default) indicates that editor settings should be used."
+        },
         "lua.format.indentCount": {
-          "type": "integer",
-          "default": 4,
-          "description": "Number of characters to indent"
+          "type": [
+            "null",
+            "integer"
+          ],
+          "default": null,
+          "description": "Number of spaces to indent. A value of null (default) indicates that editor settings should be used."
         },
         "lua.format.singleQuote": {
           "type": "boolean",
