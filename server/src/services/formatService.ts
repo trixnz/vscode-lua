@@ -18,6 +18,7 @@ class Edit {
     public constructor(action: EditAction, start: Position) {
         this.action = action;
         this.start = start;
+        this.end = Position.create(0, 0);
     }
 }
 

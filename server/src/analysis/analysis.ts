@@ -8,7 +8,7 @@ export class Analysis {
     public symbols: Symbol[] = [];
 
     private scopeStack: Scope[] = [];
-    private globalScope: Scope;
+    private globalScope: Scope | null = null;
     private cursorScope: Scope | null = null;
     private completionTableName: string | null = null;
 
@@ -90,7 +90,9 @@ export class Analysis {
     }
 
     public buildGlobalSymbols() {
-        this.globalScope.nodes.forEach((n) => this.addSymbolsForNode(n, false));
+        if (this.globalScope) {
+            this.globalScope.nodes.forEach((n) => this.addSymbolsForNode(n, false));
+        }
     }
 
     private addTableScopeSymbols() {
