@@ -44,8 +44,8 @@ class ServiceDispatcher {
         new IPCMessageWriter(process)
     );
 
-    private rootUri: string | null;
-    private settings: Settings;
+    private rootUri: string | null = null;
+    private settings: Settings = {} as any;
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
     private readonly triggerCharacters = ['.', ':'];
