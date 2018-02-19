@@ -282,7 +282,7 @@ class ServiceDispatcher {
                         e.line - 1, line.length);
 
                     // Strip out the row and column from the message
-                    const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
+                    const message = e.message.match(/\[\d+:\d+\] (.*)/) [1];
 
                     const diagnostic: Diagnostic = {
                         range,
@@ -300,7 +300,7 @@ class ServiceDispatcher {
 
         try {
             // TODO: Clean up the dependency on this.settings.. should probably have a SettingsManager type class.
-            const lintingErrors = await buildLintingErrors(this.settings, documentUri, documentText);
+            const lintingErrors = buildLintingErrors(this.settings, documentUri, documentText);
 
             // If luacheck errors are preferred and luacheck has provided us with some, usurp any luaparse errors.
             if (this.settings.preferLuaCheckErrors && lintingErrors.length > 0) {
