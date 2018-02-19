@@ -2,7 +2,7 @@ import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { spawn } from 'child_process';
 // Arrrgh. This is awful!
 import { Settings } from '../server';
-import { dirname, extname } from 'path';
+import { dirname } from 'path';
 import Uri from 'vscode-uri';
 
 function parseDiagnostics(data: string): Diagnostic[] {
@@ -54,18 +54,11 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
     // If a path to luacheck hasn't been provided, don't bother trying.
     if (!settings.luacheckPath) { return Promise.resolve([]); }
 
-    let luacheckPath = settings.luacheckPath;
-
-    // On Windows, luacheck is invoked via a .bat file
-    if (process.platform === 'win32' && extname(luacheckPath) !== '.bat') {
-        luacheckPath += '.bat';
-    }
-
     return new Promise<Diagnostic[]>((resolve, reject) => {
         const uri = Uri.parse(documentUri);
         const dir = dirname(uri.fsPath);
 
-        const cp = spawn(luacheckPath, [
+        const cp = spawn(settings.luacheckPath, [
             '-', '--no-color', '--ranges', '--codes', '--filename=' + uri.fsPath
         ], { cwd: dir });
 
