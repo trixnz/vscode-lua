@@ -74,9 +74,9 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
     // Exit code is 2 if there were some syntax errors or invalid inline options.
     // Exit code is 3 if some files couldn’t be checked, typically due to an incorrect file name.
     // Exit code is 4 if there was a critical error(invalid CLI arguments, config, or cache file).
-    if (cp.status == 0) { return []; }
+    if (cp.status === 0) { return []; }
 
-    if (cp.status == 1 || cp.status == 2) {
+    if (cp.status === 1 || cp.status === 2) {
         return parseDiagnostics(cp.output.join('\n'));
     }
 
