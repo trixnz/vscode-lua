@@ -12,7 +12,7 @@
     "@types/diff": "^3.2.0",
     "@types/node-dir": "0.0.30",
     "diff": "^3.3.0",
-    "lua-fmt": "^2.0.0",
+    "lua-fmt": "^2.6.0",
     "luaparse": "^0.2.1",
     "node-dir": "^0.1.16",
     "source-map-support": "^0.4.11",
