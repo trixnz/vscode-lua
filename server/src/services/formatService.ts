@@ -96,7 +96,8 @@ export function buildDocumentFormatEdits(documentUri: string, document: TextDocu
         useTabs,
         indentCount,
         lineWidth: extFormatOptions.lineWidth,
-        quotemark: extFormatOptions.singleQuote ? 'single' : 'double'
+        quotemark: extFormatOptions.singleQuote ? 'single' : 'double',
+        linebreakMultipleAssignments: extFormatOptions.linebreakMultipleAssignments
     };
     let formattedText = formatText(documentText, formatOptions);
 

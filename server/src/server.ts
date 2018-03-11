@@ -28,6 +28,7 @@ export interface FormatOptions {
     useTabs: boolean;
     lineWidth: number;
     singleQuote: boolean;
+    linebreakMultipleAssignments: boolean;
 }
 
 export interface Settings {
@@ -212,6 +213,8 @@ class ServiceDispatcher {
         }
         this.settings.format.lineWidth = validateSetting<number>(this.settings.format.lineWidth, 120);
         this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
+        this.settings.format.linebreakMultipleAssignments = validateSetting<boolean>(
+            this.settings.format.linebreakMultipleAssignments, false);
 
         // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
         // so its possible that the version string will be malformed.
@@ -282,7 +285,7 @@ class ServiceDispatcher {
                         e.line - 1, line.length);
 
                     // Strip out the row and column from the message
-                    const message = e.message.match(/\[\d+:\d+\] (.*)/) [1];
+                    const message = e.message.match(/\[\d+:\d+\] (.*)/)[1];
 
                     const diagnostic: Diagnostic = {
                         range,

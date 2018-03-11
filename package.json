@@ -92,6 +92,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to use single or double quotes on strings. Defaults to double quotes"
+        },
+        "lua.format.linebreakMultipleAssignments": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to split multiple assignments onto separate lines. Defaults to false"
         }
       }
     }
