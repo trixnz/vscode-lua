@@ -2,7 +2,7 @@
   "name": "vscode-lua",
   "displayName": "vscode-lua",
   "description": "Intellisense and Linting for Lua",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "publisher": "trixnz",
   "homepage": "https://github.com/trixnz/vscode-lua#readme",
   "repository": {
