@@ -16,8 +16,8 @@
     "luaparse": "^0.2.1",
     "node-dir": "^0.1.16",
     "source-map-support": "^0.4.11",
-    "vscode-languageserver": "^3.0.4",
-    "vscode-uri": "^1.0.0"
+    "vscode-languageserver": "^3.5.1",
+    "vscode-uri": "^1.0.3"
   },
   "devDependencies": {
     "@types/node": "^6.0.96",

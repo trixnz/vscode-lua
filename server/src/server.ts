@@ -19,7 +19,7 @@ import { buildLintingErrors } from './services/lintingService';
 import { buildDocumentFormatEdits, buildDocumentRangeFormatEdits } from './services/formatService';
 
 import { readFiles, FileNamedCallback } from 'node-dir';
-import Uri from 'vscode-uri/lib';
+import Uri from 'vscode-uri';
 
 import * as luaparse from 'luaparse';
 
