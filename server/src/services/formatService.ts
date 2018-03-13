@@ -1,4 +1,4 @@
-import { TextEdit, Range, Position, TextDocument } from 'vscode-languageserver';
+import { TextEdit, Range, Position, TextDocument, FormattingOptions } from 'vscode-languageserver';
 import { formatText, producePatch, UserOptions, WriteMode } from 'lua-fmt';
 import { parsePatch } from 'diff';
 import { FormatOptions } from '../server';
@@ -18,6 +18,7 @@ class Edit {
     public constructor(action: EditAction, start: Position) {
         this.action = action;
         this.start = start;
+        this.end = Position.create(0, 0);
     }
 }
 
@@ -82,15 +83,21 @@ function getEditsFromFormattedText(documentUri: string, originalText: string, fo
     });
 }
 
-export function buildDocumentFormatEdits(documentUri: string, document: TextDocument, extFormatOptions: FormatOptions):
+export function buildDocumentFormatEdits(documentUri: string, document: TextDocument, extFormatOptions: FormatOptions,
+    editorFormatOptions: FormattingOptions):
     TextEdit[] {
     let documentText = document.getText();
 
+    const useTabs = extFormatOptions.useTabs || !editorFormatOptions.insertSpaces;
+    const indentCount = extFormatOptions.indentCount || editorFormatOptions.tabSize;
+
     const formatOptions: UserOptions = {
         writeMode: WriteMode.Diff,
-        indentCount: extFormatOptions.indentCount,
+        useTabs,
+        indentCount,
         lineWidth: extFormatOptions.lineWidth,
-        quotemark: extFormatOptions.singleQuote ? 'single' : 'double'
+        quotemark: extFormatOptions.singleQuote ? 'single' : 'double',
+        linebreakMultipleAssignments: extFormatOptions.linebreakMultipleAssignments
     };
     let formattedText = formatText(documentText, formatOptions);
 
@@ -105,7 +112,7 @@ export function buildDocumentFormatEdits(documentUri: string, document: TextDocu
 }
 
 export function buildDocumentRangeFormatEdits(_documentUri: string, _document: TextDocument,
-    _range: Range, _extFormatOptions: FormatOptions): TextEdit[] {
+    _range: Range, _extFormatOptions: FormatOptions, _editorFormatOptions: FormattingOptions): TextEdit[] {
     return [];
 
     // TODO: This feature is dependent on https://github.com/trixnz/lua-fmt/issues/14 to provide a reasonable

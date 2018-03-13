@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
-import { spawn } from 'child_process';
+import { spawnSync } from 'child_process';
 // Arrrgh. This is awful!
 import { Settings } from '../server';
 import { dirname } from 'path';
@@ -52,32 +52,33 @@ function parseDiagnostics(data: string): Diagnostic[] {
 
 export function buildLintingErrors(settings: Settings, documentUri: string, documentText: string) {
     // If a path to luacheck hasn't been provided, don't bother trying.
-    if (!settings.luacheckPath) { return Promise.resolve([]); }
+    if (!settings.luacheckPath) { return []; }
 
-    return new Promise<Diagnostic[]>((resolve, reject) => {
-        const uri = Uri.parse(documentUri);
-        const dir = dirname(uri.fsPath);
+    const uri = Uri.parse(documentUri);
+    const dir = dirname(uri.fsPath);
 
-        const process = spawn(settings.luacheckPath, [
+    const cp = spawnSync(
+        settings.luacheckPath,
+        [
             '-', '--no-color', '--ranges', '--codes', '--filename=' + uri.fsPath
-        ], { cwd: dir });
+        ],
+        {
+            cwd: dir,
+            input: documentText
+        }
+    );
 
-        try {
-            process.stdin.write(documentText);
-            process.stdin.end();
-        } catch (err) { }
+    // From https://luacheck.readthedocs.io/en/stable/cli.html
+    // Exit code is 0 if no warnings or errors occurred.
+    // Exit code is 1 if some warnings occurred but there were no syntax errors or invalid inline options.
+    // Exit code is 2 if there were some syntax errors or invalid inline options.
+    // Exit code is 3 if some files couldn’t be checked, typically due to an incorrect file name.
+    // Exit code is 4 if there was a critical error(invalid CLI arguments, config, or cache file).
+    if (cp.status === 0) { return []; }
 
-        process.stdout.on('data', (data: Buffer) => {
-            return resolve(parseDiagnostics(data.toString()));
-        });
-        process.stderr.on('data', (data: Buffer) => {
-            return reject(data.toString());
-        });
-        process.on('error', (err: NodeJS.ErrnoException) => {
-            if (err.code === 'ENOENT') {
-                return reject('Path to luacheck is invalid.');
-            }
-            return reject(err);
-        });
-    });
+    if (cp.status === 1 || cp.status === 2) {
+        return parseDiagnostics(cp.output.join('\n'));
+    }
+
+    throw new Error('luacheck failed with error: ' + cp.stderr.toString());
 }

@@ -19,14 +19,16 @@ import { buildLintingErrors } from './services/lintingService';
 import { buildDocumentFormatEdits, buildDocumentRangeFormatEdits } from './services/formatService';
 
 import { readFiles, FileNamedCallback } from 'node-dir';
-import Uri from 'vscode-uri/lib';
+import Uri from 'vscode-uri';
 
 import * as luaparse from 'luaparse';
 
 export interface FormatOptions {
     indentCount: number;
+    useTabs: boolean;
     lineWidth: number;
     singleQuote: boolean;
+    linebreakMultipleAssignments: boolean;
 }
 
 export interface Settings {
@@ -43,14 +45,15 @@ class ServiceDispatcher {
         new IPCMessageWriter(process)
     );
 
-    private rootUri: string | null;
-    private settings: Settings;
+    private rootUri: string | null = null;
+    private settings: Settings = {} as any;
     private documents: TextDocuments = new TextDocuments();
     private perDocumentAnalysis = new Map<string, Analysis.Analysis>();
     private readonly triggerCharacters = ['.', ':'];
 
     public constructor() {
         this.documents.onDidChangeContent(change => this.onDidChangeContent(change));
+        this.documents.onDidClose(change => this.onDidClose(change));
 
         this.connection.onInitialize(handler => this.onInitialize(handler));
         this.connection.onCompletion(pos => this.onCompletion(pos));
@@ -169,7 +172,7 @@ class ServiceDispatcher {
             return [];
         }
 
-        const suggestionService = new CompletionService(analysis, textDocumentPosition.position);
+        const suggestionService = new CompletionService(analysis);
 
         const word = documentText.substring(startOffset, endOffset);
         return suggestionService.buildCompletions(word.toLowerCase());
@@ -181,6 +184,13 @@ class ServiceDispatcher {
                 uri: change.document.uri,
                 diagnostics
             });
+        });
+    }
+
+    private onDidClose(change: TextDocumentChangeEvent) {
+        this.connection.sendDiagnostics({
+            uri: change.document.uri,
+            diagnostics: []
         });
     }
 
@@ -196,9 +206,15 @@ class ServiceDispatcher {
         };
 
         this.settings.preferLuaCheckErrors = validateSetting<boolean>(this.settings.preferLuaCheckErrors, false);
-        this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);
+        // indentCount defaults to `null`, which means we should use the editor settings. Anything else shall override
+        // what the editor tells us.
+        if (this.settings.format.indentCount !== null) {
+            this.settings.format.indentCount = validateSetting<number>(this.settings.format.indentCount, 4);
+        }
         this.settings.format.lineWidth = validateSetting<number>(this.settings.format.lineWidth, 120);
         this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
+        this.settings.format.linebreakMultipleAssignments = validateSetting<boolean>(
+            this.settings.format.linebreakMultipleAssignments, false);
 
         // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
         // so its possible that the version string will be malformed.
@@ -229,14 +245,14 @@ class ServiceDispatcher {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentFormatEdits(uri, document, this.settings.format);
+        return buildDocumentFormatEdits(uri, document, this.settings.format, params.options);
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
-        return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format);
+        return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format, params.options);
     }
 
     private async parseAndLintDocument(document: TextDocument) {
@@ -287,7 +303,7 @@ class ServiceDispatcher {
 
         try {
             // TODO: Clean up the dependency on this.settings.. should probably have a SettingsManager type class.
-            const lintingErrors = await buildLintingErrors(this.settings, documentUri, documentText);
+            const lintingErrors = buildLintingErrors(this.settings, documentUri, documentText);
 
             // If luacheck errors are preferred and luacheck has provided us with some, usurp any luaparse errors.
             if (this.settings.preferLuaCheckErrors && lintingErrors.length > 0) {

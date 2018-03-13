@@ -1,7 +1,7 @@
 import { Analysis } from '../analysis';
 import { SymbolInformation, SymbolKind, Location } from 'vscode-languageserver';
 import { matchesQuery } from '../utils';
-import Uri from 'vscode-uri/lib';
+import Uri from 'vscode-uri';
 
 export function buildWorkspaceSymbols(path: string, query: string, analysis: Analysis): SymbolInformation[] {
     const symbols: SymbolInformation[] = [];
