@@ -99,7 +99,14 @@ export function buildDocumentFormatEdits(documentUri: string, document: TextDocu
         quotemark: extFormatOptions.singleQuote ? 'single' : 'double',
         linebreakMultipleAssignments: extFormatOptions.linebreakMultipleAssignments
     };
-    let formattedText = formatText(documentText, formatOptions);
+    let formattedText: string;
+    try {
+        formattedText = formatText(documentText, formatOptions);
+    } catch {
+        // Return an empty array of edits in the case of failure to avoid distracting the user with the Output window
+        // appearing every time there was an error formatting the document. Fixes #45.
+        return [];
+    }
 
     // Normalize the line endings so jsdiff has a chance at providing minimal edits, otherwise the diffing result will
     // be one giant edit, which isn't very friendly.
