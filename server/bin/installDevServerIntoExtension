@@ -58,4 +58,7 @@ console.log('Copying package.json to extension\'s server location...');
 fs.writeFileSync(dest, fs.readFileSync(packageFile));
 
 console.log('Updating server npm modules into extension\'s server location...');
-cp.execSync('npm update --development --prefix ' + extensionServerDirectory);
+cp.execSync('npm update --prefix ' + extensionServerDirectory);
+
+console.log('Updating server dev-npm modules into extension\'s server location...');
+cp.execSync('npm update -D --prefix ' + extensionServerDirectory);
