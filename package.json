@@ -45,7 +45,7 @@
       }
     ],
     "configuration": {
-      "title": "vscode-lua configuration",
+      "title": "Lua",
       "properties": {
         "lua.luacheckPath": {
           "type": [
