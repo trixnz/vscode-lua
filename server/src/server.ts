@@ -32,11 +32,16 @@ export interface FormatOptions {
     linebreakMultipleAssignments: boolean;
 }
 
+export interface LintingOptions {
+    enabled: boolean;
+}
+
 export interface Settings {
     luacheckPath: string;
     preferLuaCheckErrors: boolean;
     targetVersion: string;
     format: FormatOptions;
+    linting: LintingOptions;
 }
 
 class ServiceDispatcher {
@@ -202,6 +207,7 @@ class ServiceDispatcher {
 
     private onDidChangeConfiguration(change: any) {
         const oldVersion = this.settings ? this.settings.targetVersion : null;
+        const oldLinterSettings = this.settings ? this.settings.linting : null;
         this.settings = change.settings.lua as Settings;
 
         // Because the JSON we get in `change` can be anything, we need to make sure that we've actually been passed
@@ -232,10 +238,18 @@ class ServiceDispatcher {
         // remembering to pass it in every time we may use it.
         luaparse.defaultOptions.luaVersion = this.settings.targetVersion;
 
-        // If the version has changed, we best act on it.
-        if (oldVersion && oldVersion !== this.settings.targetVersion) {
-            // Re-lint all of the open documents, as the previous diagnostics may no longer be valid for the new
-            // version.
+        let relintAllDocuments = false;
+        // If the version has changed, we should most definitely re-lint all documents
+        if (oldVersion !== null && oldVersion !== this.settings.targetVersion) {
+            relintAllDocuments = true;
+        }
+
+        // If any linter settings have changed, we should be nice and re-lint.
+        if (oldLinterSettings !== null && oldLinterSettings !== this.settings.linting) {
+            relintAllDocuments = true;
+        }
+
+        if (relintAllDocuments) {
             this.documents.all().forEach((doc) => {
                 this.parseAndLintDocument(doc).then(diagnostics => {
                     this.connection.sendDiagnostics({
@@ -322,6 +336,10 @@ class ServiceDispatcher {
         };
 
         let errors = await parseDocument();
+
+        if (!this.settings.linting.enabled) {
+            return [];
+        }
 
         try {
             // TODO: Clean up the dependency on this.settings.. should probably have a SettingsManager type class.

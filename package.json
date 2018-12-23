@@ -121,6 +121,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to split multiple assignments onto separate lines. Defaults to false"
+        },
+        "lua.linting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Specifies whether to enable linting of source files"
         }
       }
     }
