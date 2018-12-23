@@ -126,6 +126,14 @@
           "type": "boolean",
           "default": true,
           "description": "Specifies whether to enable linting of source files"
+        },
+        "lua.linting.luaCheckConfig": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Path to a .luacheckrc to be used for linting, instead of the default luacheck search path"
         }
       }
     }

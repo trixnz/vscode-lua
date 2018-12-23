@@ -57,14 +57,25 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
     const uri = Uri.parse(documentUri);
     const dir = dirname(uri.fsPath);
 
+    const getLuacheckArgs = () => {
+        const args = [
+            '-', '--no-color', '--ranges', '--codes', `--filename "${uri.fsPath}"`
+        ];
+
+        if (settings.linting.luaCheckConfig) {
+            args.push(`--config "${settings.linting.luaCheckConfig}"`);
+        }
+
+        return args;
+    };
+
     const cp = spawnSync(
-        settings.luacheckPath,
-        [
-            '-', '--no-color', '--ranges', '--codes', '--filename=' + uri.fsPath
-        ],
+        `"${settings.luacheckPath}"`,
+        getLuacheckArgs(),
         {
             cwd: dir,
-            input: documentText
+            input: documentText,
+            shell: true
         }
     );
 

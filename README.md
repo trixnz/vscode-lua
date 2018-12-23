@@ -41,6 +41,8 @@ Whether to use single or double quotes on strings. Defaults to double quotes.
 
 #### lua.linting.enabled (Default: `true`)
 Specifies whether to enable linting of source files
+#### lua.linting.luaCheckConfig (Default: `null`)
+Path to a .luacheckrc to be used for linting, instead of the default luacheck search path
 
 ## Luacheck
 Support for linting is provided via [luacheck](https://github.com/mpeterv/luacheck). Installation instructions can be found on the `luacheck` [repository](https://github.com/mpeterv/luacheck#installation).

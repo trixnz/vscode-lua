@@ -35,6 +35,7 @@ export interface FormatOptions {
 
 export interface LintingOptions {
     enabled: boolean;
+    luaCheckConfig: string;
 }
 
 export interface Settings {
