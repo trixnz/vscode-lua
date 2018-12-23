@@ -31,7 +31,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
         }
     };
 
-    const serverOptions: ServerOptions = {
+    let serverOptions: ServerOptions = {
         run: { module: serverModule, transport: TransportKind.ipc, options: runOptions },
         debug: {
             module: serverModule,
@@ -44,6 +44,14 @@ function startLanguageServer(context: vscode.ExtensionContext) {
             options: debugOptions
         }
     };
+
+    const serverCommand = vscode.workspace.getConfiguration().get('lua.server.command') as string;
+    if (serverCommand) {
+        const serverArgs = vscode.workspace.getConfiguration().get('lua.server.args') as string[];
+        serverOptions = {
+            command: serverCommand, args: serverArgs
+        };
+    }
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
