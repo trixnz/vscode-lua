@@ -22,6 +22,7 @@ import { readFiles, FileNamedCallback } from 'node-dir';
 import Uri from 'vscode-uri';
 
 import * as luaparse from 'luaparse';
+import { basename } from 'path';
 
 export interface FormatOptions {
     enabled: boolean;
@@ -339,6 +340,11 @@ class ServiceDispatcher {
 
         if (!this.settings.linting.enabled) {
             return [];
+        }
+
+        // Don't lint .luacheckrc files. Just return any parsing errors encountered.
+        if (basename(parsedUri.fsPath) === '.luacheckrc') {
+            return errors;
         }
 
         try {
