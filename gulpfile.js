@@ -37,8 +37,12 @@ gulp.task('tslint', function () {
         .pipe(tslint.report())
 });
 
-gulp.task('patch', ['default'], function () { return bumpVersion('patch'); })
-gulp.task('minor', ['default'], function () { return bumpVersion('minor'); })
-gulp.task('major', ['default'], function () { return bumpVersion('major'); })
+gulp.task('build', gulp.series('compileServer', 'compileClient'))
+gulp.task('buildAndLint', gulp.series('tslint', 'build'))
+const buildAndLint = gulp.task('buildAndLint')
 
-gulp.task('default', ['compileServer', 'compileClient', 'tslint']);
+gulp.task('patch', gulp.series(buildAndLint, function () { return bumpVersion('patch'); }));
+gulp.task('minor', gulp.series(buildAndLint, function () { return bumpVersion('minor'); }));
+gulp.task('major', gulp.series(buildAndLint, function () { return bumpVersion('major'); }));
+
+gulp.task('default', buildAndLint)
