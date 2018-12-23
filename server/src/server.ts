@@ -24,6 +24,7 @@ import Uri from 'vscode-uri';
 import * as luaparse from 'luaparse';
 
 export interface FormatOptions {
+    enabled: boolean;
     indentCount: number;
     useTabs: boolean;
     lineWidth: number;
@@ -247,6 +248,10 @@ class ServiceDispatcher {
     }
 
     private onDocumentFormatting(params: DocumentFormattingParams): TextEdit[] {
+        if (!this.settings.format.enabled) {
+            return [];
+        }
+
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
@@ -258,6 +263,10 @@ class ServiceDispatcher {
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
+        if (!this.settings.format.enabled) {
+            return [];
+        }
+
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 

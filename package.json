@@ -69,6 +69,11 @@
             "5.3"
           ]
         },
+        "lua.format.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Specifies whether to use the Lua formatter"
+        },
         "lua.format.lineWidth": {
           "type": "integer",
           "default": 120,

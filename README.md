@@ -29,6 +29,9 @@ Specifies the target version of Lua. Valid options:
 * 5.3
 
 Can also be changed using the version selector in the bottom right of the IDE.
+
+#### lua.format.enabled (Default: `true`)
+Specifies whether to use the Lua formatter
 #### lua.format.lineWidth (Default: `120`)
 Maximum length of a line before it will be wrapped.
 #### lua.format.indentCount (Default: `4`)
