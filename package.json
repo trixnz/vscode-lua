@@ -40,7 +40,8 @@
         "extensions": [
           ".lua",
           ".luacheckrc"
-        ]
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "configuration": {
