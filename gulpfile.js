@@ -37,7 +37,7 @@ gulp.task('tslint', function () {
         .pipe(tslint.report())
 });
 
-gulp.task('build', gulp.series('compileServer', 'compileClient'))
+gulp.task('build', gulp.series('compileClient', 'compileServer'))
 gulp.task('buildAndLint', gulp.series('tslint', 'build'))
 const buildAndLint = gulp.task('buildAndLint')
 
