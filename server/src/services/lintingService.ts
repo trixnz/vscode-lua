@@ -66,6 +66,8 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
             args.push(`--config "${settings.linting.luaCheckConfig}"`);
         }
 
+        args.push(...settings.linting.luaCheckArgs);
+
         return args;
     };
 

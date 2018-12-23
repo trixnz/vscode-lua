@@ -134,6 +134,15 @@
           ],
           "default": null,
           "description": "Path to a .luacheckrc to be used for linting, instead of the default luacheck search path"
+        },
+        "lua.linting.luaCheckArgs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "arguments"
+          },
+          "default": [],
+          "description": "Additional arguments to pass to luacheck"
         }
       }
     }
