@@ -135,6 +135,11 @@ class ServiceDispatcher {
     private onCompletion(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
         const uri = textDocumentPosition.textDocument.uri;
         const document = this.documents.get(uri);
+
+        if (!document) {
+            return [];
+        }
+
         const documentText = document.getText();
 
         const { prefixStartPosition, suffixEndPosition } = getCursorWordBoundry(documentText,
@@ -245,12 +250,20 @@ class ServiceDispatcher {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
 
+        if (!document) {
+            return [];
+        }
+
         return buildDocumentFormatEdits(uri, document, this.settings.format, params.options);
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
         const uri = params.textDocument.uri;
         const document = this.documents.get(uri);
+
+        if (!document) {
+            return [];
+        }
 
         return buildDocumentRangeFormatEdits(uri, document, params.range, this.settings.format, params.options);
     }
@@ -316,7 +329,7 @@ class ServiceDispatcher {
 
         return errors;
     }
-};
+}
 
 let serviceDispatcher: ServiceDispatcher | null = null;
 

@@ -41,4 +41,4 @@ export function matchesQuery(query: string, name: string | null) {
     if (query.length === 0) { return true; }
     if (name === null) { return false; }
     return name.toLowerCase().indexOf(query) !== -1;
-};
+}
