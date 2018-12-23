@@ -22,8 +22,9 @@
     "vscode": "^1.6.0"
   },
   "categories": [
-    "Languages",
-    "Linters"
+    "Programming Languages",
+    "Linters",
+    "Formatters"
   ],
   "activationEvents": [
     "onLanguage:lua"
