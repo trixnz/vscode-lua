@@ -10,6 +10,7 @@ import {
     SymbolInformation, WorkspaceSymbolParams, InitializeParams
 } from 'vscode-languageserver';
 
+import * as anymatch from 'anymatch';
 import { getCursorWordBoundry } from './utils';
 import * as Analysis from './analysis';
 import { CompletionService } from './services/completionService';
@@ -31,6 +32,7 @@ export interface FormatOptions {
     lineWidth: number;
     singleQuote: boolean;
     linebreakMultipleAssignments: boolean;
+    exclude: string[];
 }
 
 export interface LintingOptions {
@@ -264,8 +266,15 @@ class ServiceDispatcher {
         }
     }
 
+    private shouldFormat(params: DocumentFormattingParams | DocumentRangeFormattingParams) : boolean {
+
+        const excluded = anymatch(this.settings.format.exclude, params.textDocument.uri);
+
+        return this.settings.format.enabled && !excluded;
+    }
+
     private onDocumentFormatting(params: DocumentFormattingParams): TextEdit[] {
-        if (!this.settings.format.enabled) {
+        if (!this.shouldFormat(params)) {
             return [];
         }
 
@@ -280,7 +289,7 @@ class ServiceDispatcher {
     }
 
     private onDocumentRangeFormatting(params: DocumentRangeFormattingParams): TextEdit[] {
-        if (!this.settings.format.enabled) {
+        if (!this.shouldFormat(params)) {
             return [];
         }
 

@@ -38,6 +38,8 @@ Maximum length of a line before it will be wrapped.
 Number of characters to indent.
 #### lua.format.singleQuote (Default: `false`)
 Whether to use single or double quotes on strings. Defaults to double quotes.
+#### lua.format.exclude (Default: `[]`)
+List of globs to exclude files from lua formatting.
 
 #### lua.linting.enabled (Default: `true`)
 Specifies whether to enable linting of source files
