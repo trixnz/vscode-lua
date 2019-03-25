@@ -143,6 +143,15 @@
           },
           "default": [],
           "description": "Additional arguments to pass to luacheck"
+        },
+        "lua.format.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "arguments"
+          },
+          "default": [],
+          "description": "List of globs to exclude files from lua formatting."
         }
       }
     }
