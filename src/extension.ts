@@ -19,14 +19,20 @@ export function deactivate() {
 function startLanguageServer(context: vscode.ExtensionContext) {
     const serverModule = path.join(__dirname, '../server', 'main.js');
 
+    const env = {
+        PATH: process.env.PATH
+    };
+
     const debugOptions = {
         execArgv: ['--nolazy', '--inspect=6009'], env: {
+            ...env,
             NODE_ENV: 'development'
         }
     };
 
     const runOptions = {
         env: {
+            ...env,
             NODE_ENV: 'production'
         }
     };
