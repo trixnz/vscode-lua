@@ -143,6 +143,11 @@
           },
           "default": [],
           "description": "Additional arguments to pass to luacheck"
+        },
+        "lua.symbol.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Specifies whether to enable the 'Go to symbol' feature."
         }
       }
     }

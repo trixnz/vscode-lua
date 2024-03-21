@@ -39,12 +39,17 @@ export interface LintingOptions {
     luaCheckArgs: string[];
 }
 
+export interface SymbolOptions {
+    enabled: boolean;
+}
+
 export interface Settings {
     luacheckPath: string;
     preferLuaCheckErrors: boolean;
     targetVersion: string;
     format: FormatOptions;
     linting: LintingOptions;
+    symbol: SymbolOptions;
 }
 
 class ServiceDispatcher {
@@ -97,6 +102,10 @@ class ServiceDispatcher {
     }
 
     private onDocumentSymbol(handler: DocumentSymbolParams): SymbolInformation[] {
+        if (!this.settings.symbol.enabled) {
+            return [];
+        }
+
         const uri = handler.textDocument.uri;
         const analysis: Analysis.Analysis = this.perDocumentAnalysis[uri];
 
@@ -104,7 +113,7 @@ class ServiceDispatcher {
     }
 
     private onWorkspaceSymbol(handler: WorkspaceSymbolParams) {
-        if (!this.rootUri) {
+        if (!this.rootUri || !this.settings.symbol.enabled) {
             return [];
         }
 
@@ -230,6 +239,7 @@ class ServiceDispatcher {
         this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
         this.settings.format.linebreakMultipleAssignments = validateSetting<boolean>(
             this.settings.format.linebreakMultipleAssignments, false);
+        this.settings.symbol.enabled = validateSetting<boolean>(this.settings.symbol.enabled, true);
 
         // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
         // so its possible that the version string will be malformed.
